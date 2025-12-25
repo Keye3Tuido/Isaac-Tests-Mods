@@ -1,0 +1,2990 @@
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+xmlns:x="urn:schemas-microsoft-com:office:excel"
+xmlns="http://www.w3.org/TR/REC-html40">
+
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=utf-8">
+<meta name=ProgId content=Excel.Sheet>
+<meta name=Generator content="Microsoft Excel 15">
+<link id=Main-File rel=Main-File href="../r+_BDIXL5_3.32w.html">
+<link rel=File-List href=filelist.xml>
+<link rel=Stylesheet href=stylesheet.css>
+<style>
+<!--table
+	{mso-displayed-decimal-separator:"\.";
+	mso-displayed-thousand-separator:"\,";}
+@page
+	{margin:.75in .7in .75in .7in;
+	mso-header-margin:.3in;
+	mso-footer-margin:.3in;}
+ruby
+	{ruby-align:left;}
+rt
+	{color:windowtext;
+	font-size:9.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:宋体;
+	mso-generic-font-family:auto;
+	mso-font-charset:134;
+	mso-char-type:none;
+	display:none;}
+-->
+</style>
+<![if !supportTabStrip]><script language="JavaScript">
+<!--
+function fnUpdateTabs()
+ {
+  if (parent.window.g_iIEVer>=4) {
+   if (parent.document.readyState=="complete"
+    && parent.frames['frTabs'].document.readyState=="complete")
+   parent.fnSetActiveSheet(5);
+  else
+   window.setTimeout("fnUpdateTabs();",150);
+ }
+}
+
+if (window.name!="frSheet")
+ window.location.replace("../r+_BDIXL5_3.32w.html");
+else
+ fnUpdateTabs();
+//-->
+</script>
+<![endif]>
+</head>
+
+<body link=blue vlink=purple>
+
+<table border=0 cellpadding=0 cellspacing=0 width=792 style='border-collapse:
+ collapse;table-layout:fixed;width:592pt'>
+ <col width=141 style='mso-width-source:userset;mso-width-alt:4795;width:105pt'>
+ <col width=96 style='mso-width-source:userset;mso-width-alt:3259;width:72pt'>
+ <col width=111 span=5 style='mso-width-source:userset;mso-width-alt:3771;
+ width:83pt'>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td colspan=6 rowspan=53 height=1272 class=xl71 width=681 style='height:954.0pt;
+  width:509pt'>计算说明（本节列出脚本中用于计算与检验的公式与步骤，便于复现）：<br>
+    <br>
+    1) 概率估计<br>
+    <span style='mso-spacerun:yes'>   </span>- 观测计数 A_i 为某类别的观测次数，总试验次数为
+  N（或在两类比较中为 m = A + B）。<br>
+    <span style='mso-spacerun:yes'>   </span>- 类别的估计概率： p_hat = A / N
+  （若只比较两类，则条件概率 p_hat = A / m）。<br>
+    <br>
+    2) Wilson 置信区间（用于单个类别概率的置信区间，双侧）<br>
+    <span style='mso-spacerun:yes'>   </span>- 给定显著性水平 alpha（双侧），先计算 z =
+  Phi^{-1}(1 - alpha/2)。<br>
+    <span style='mso-spacerun:yes'>   </span>- 设 p_hat = A / N，<br>
+    <span style='mso-spacerun:yes'>     </span>denom = 1 + z^2 / N<br>
+    <span style='mso-spacerun:yes'>     </span>center = p_hat + z^2 /
+  (2N)<br>
+    <span style='mso-spacerun:yes'>     </span>rad = z * sqrt(
+  p_hat*(1-p_hat)/N + z^2/(4N^2) )<br>
+    <span style='mso-spacerun:yes'>     </span>下界 lower = (center - rad) /
+  denom<br>
+    <span style='mso-spacerun:yes'>     </span>上界 upper = (center + rad) /
+  denom<br>
+    <span style='mso-spacerun:yes'>   </span>- 区间被截断到 [0,1]。<br>
+    <br>
+    3) 两类显著性比较（用于判断 A &gt; B）<br>
+    <span style='mso-spacerun:yes'>   </span>- 只看落在 A 或 B 的样本，令 m = A +
+  B。<br>
+    <span style='mso-spacerun:yes'>   </span>- 在原假设 H0: p_A = p_B（条件下 p =
+  0.5）下，A ~ Binomial(m, 0.5)。<br>
+    <span style='mso-spacerun:yes'>   </span>- 使用精确二项检验（binomtest）做单侧检验：H1: p_A
+  &gt; 0.5（即 A 的条件概率大于 B）。<br>
+    <span style='mso-spacerun:yes'>   </span>- 得到单侧 p_value（脚本中称为原始
+  p_value）。<br>
+    <br>
+    4) 多重比较校正（组内 Bonferroni）<br>
+    <span style='mso-spacerun:yes'>   </span>- 在同一组（例如门组或某方向子组）内做所有两两比较，若组内共有 T
+  个两两比较，<br>
+    <span style='mso-spacerun:yes'>     </span>则每次检验的显著性阈值设为 alpha_per_test =
+  overall_alpha / T（overall_alpha 默认为 0.05）。<br>
+    <span style='mso-spacerun:yes'>   </span>- 仅当单侧 p_value &lt;=
+  alpha_per_test 时，记录显著结论 A&gt;B（或 B&gt;A）。<br>
+    <br>
+    5) 差值与效应量（使用总样本 N 作为分母）<br>
+    <span style='mso-spacerun:yes'>   </span>- 在两类比较中，差值定义为：<br>
+    <span style='mso-spacerun:yes'>       </span>diff_total = (A/N) - (B/N)，其中
+  N 为总样本量。<br>
+    <span style='mso-spacerun:yes'>   </span>- 这样差值直接反映在总样本中的概率差异，便于与“误差 ≤1%（按
+  N 分母）”规则对齐。<br>
+    <span style='mso-spacerun:yes'>   </span>- 在结论页中，差值单元格按以下规则着色：<br>
+    <span style='mso-spacerun:yes'>       </span>&lt;1% → 灰色；1%~2% → 黄色；≥2% →
+  绿色。<br>
+    <br>
+    6) 方向比较限制（脚本实现细节）<br>
+    <span style='mso-spacerun:yes'>   </span>- 方向分为两组：直角组 = {Left, Up, Right,
+  Down}；斜角组 = {Up-Left, Up-Right, Down-Right, Down-Left}。<br>
+    <span style='mso-spacerun:yes'>   </span>- 仅在组内做两两比较，不跨组比较。<br>
+    <br>
+    7) 概率统计表（概率统计页）<br>
+    <span style='mso-spacerun:yes'>   </span>- 每个类别的概率由原始计数除以 Total 得到：Door_X =
+  Door_X_count / Total；Dir_Y = Dir_Y_count / Total。<br>
+    <br>
+    8) 均值/方差/标准差（均值偏差页）<br>
+    <span style='mso-spacerun:yes'>   </span>- 组内均值（例如门组）: mean = mean(p_i)（忽略为
+  0 的项以避免 Total=0 的影响）。<br>
+    <span style='mso-spacerun:yes'>   </span>- 以百分比形式计算偏差列： (p_i - mean) *
+  100。<br>
+    <span style='mso-spacerun:yes'>   </span>-
+  方差（%^2）使用样本方差（ddof=0），标准差为方差的平方根（%）。<br>
+    <br>
+    本页（置信区间验证）中特别说明：<br>
+    <span style='mso-spacerun:yes'> </span>- Doors 使用的 alpha = 0.05 /
+  4（Bonferroni 分配用于单个类别的 Wilson 区间计算）。<br>
+    <span style='mso-spacerun:yes'> </span>- Directions 使用的 alpha = 0.05 /
+  8（Bonferroni 分配用于单个方向的 Wilson 区间计算）。<br>
+    </td>
+  <td width=111 style='width:83pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td height=24 style='height:18.0pt'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>实验 1 - Doors</td>
+  <td colspan=6 style='mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
+  <td class=xl70>频数</td>
+  <td class=xl70>估计概率</td>
+  <td class=xl70>下界</td>
+  <td class=xl70>上界</td>
+  <td class=xl70>误差幅度</td>
+  <td class=xl70>≤1%</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Left</td>
+  <td align=right>11121</td>
+  <td align=right>0.33494</td>
+  <td align=right>0.328502</td>
+  <td align=right>0.34144</td>
+  <td align=right>0.0065</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up</td>
+  <td align=right>11179</td>
+  <td align=right>0.336686</td>
+  <td align=right>0.33024</td>
+  <td align=right>0.343194</td>
+  <td align=right>0.006508</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Right</td>
+  <td align=right>11029</td>
+  <td align=right>0.332169</td>
+  <td align=right>0.325745</td>
+  <td align=right>0.338656</td>
+  <td align=right>0.006487</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down</td>
+  <td align=right>11384</td>
+  <td align=right>0.342861</td>
+  <td align=right>0.336384</td>
+  <td align=right>0.349396</td>
+  <td align=right>0.006535</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>实验 1 - Directio<span
+  style='display:none'>ns</span></td>
+  <td colspan=6 style='mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
+  <td class=xl70>频数</td>
+  <td class=xl70>估计概率</td>
+  <td class=xl70>下界</td>
+  <td class=xl70>上界</td>
+  <td class=xl70>误差幅度</td>
+  <td class=xl70>≤1%</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Left</td>
+  <td align=right>3851</td>
+  <td align=right>0.115983</td>
+  <td align=right>0.111265</td>
+  <td align=right>0.120875</td>
+  <td align=right>0.004892</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up-Left</td>
+  <td align=right>4438</td>
+  <td align=right>0.133663</td>
+  <td align=right>0.128639</td>
+  <td align=right>0.138852</td>
+  <td align=right>0.005189</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up</td>
+  <td align=right>3873</td>
+  <td align=right>0.116646</td>
+  <td align=right>0.111915</td>
+  <td align=right>0.12155</td>
+  <td align=right>0.004903</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up-Right</td>
+  <td align=right>4483</td>
+  <td align=right>0.135018</td>
+  <td align=right>0.129972</td>
+  <td align=right>0.140228</td>
+  <td align=right>0.00521</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Right</td>
+  <td align=right>3727</td>
+  <td align=right>0.112249</td>
+  <td align=right>0.107599</td>
+  <td align=right>0.117073</td>
+  <td align=right>0.004825</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down-Right</td>
+  <td align=right>4463</td>
+  <td align=right>0.134416</td>
+  <td align=right>0.129379</td>
+  <td align=right>0.139617</td>
+  <td align=right>0.005201</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down</td>
+  <td align=right>3924</td>
+  <td align=right>0.118182</td>
+  <td align=right>0.113424</td>
+  <td align=right>0.123113</td>
+  <td align=right>0.004931</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down-Left</td>
+  <td align=right>4444</td>
+  <td align=right>0.133843</td>
+  <td align=right>0.128816</td>
+  <td align=right>0.139035</td>
+  <td align=right>0.005192</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
+  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>实验 1a - Doors</td>
+  <td colspan=6 style='mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
+  <td class=xl70>频数</td>
+  <td class=xl70>估计概率</td>
+  <td class=xl70>下界</td>
+  <td class=xl70>上界</td>
+  <td class=xl70>误差幅度</td>
+  <td class=xl70>≤1%</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Left</td>
+  <td align=right>11150</td>
+  <td align=right>0.335813</td>
+  <td align=right>0.329371</td>
+  <td align=right>0.342317</td>
+  <td align=right>0.006504</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up</td>
+  <td align=right>11165</td>
+  <td align=right>0.336265</td>
+  <td align=right>0.32982</td>
+  <td align=right>0.342771</td>
+  <td align=right>0.006506</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Right</td>
+  <td align=right>11020</td>
+  <td align=right>0.331898</td>
+  <td align=right>0.325475</td>
+  <td align=right>0.338383</td>
+  <td align=right>0.006486</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down</td>
+  <td align=right>11377</td>
+  <td align=right>0.34265</td>
+  <td align=right>0.336174</td>
+  <td align=right>0.349184</td>
+  <td align=right>0.006534</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>实验 1a - Directi<span
+  style='display:none'>ons</span></td>
+  <td colspan=6 style='mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
+  <td class=xl70>频数</td>
+  <td class=xl70>估计概率</td>
+  <td class=xl70>下界</td>
+  <td class=xl70>上界</td>
+  <td class=xl70>误差幅度</td>
+  <td class=xl70>≤1%</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Left</td>
+  <td align=right>3876</td>
+  <td align=right>0.116736</td>
+  <td align=right>0.112004</td>
+  <td align=right>0.121642</td>
+  <td align=right>0.004905</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up-Left</td>
+  <td align=right>4506</td>
+  <td align=right>0.135711</td>
+  <td align=right>0.130653</td>
+  <td align=right>0.140932</td>
+  <td align=right>0.005221</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up</td>
+  <td align=right>3912</td>
+  <td align=right>0.117821</td>
+  <td align=right>0.113069</td>
+  <td align=right>0.122745</td>
+  <td align=right>0.004924</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up-Right</td>
+  <td align=right>4511</td>
+  <td align=right>0.135861</td>
+  <td align=right>0.130801</td>
+  <td align=right>0.141085</td>
+  <td align=right>0.005224</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Right</td>
+  <td align=right>3679</td>
+  <td align=right>0.110803</td>
+  <td align=right>0.10618</td>
+  <td align=right>0.115601</td>
+  <td align=right>0.004798</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down-Right</td>
+  <td align=right>4415</td>
+  <td align=right>0.13297</td>
+  <td align=right>0.127957</td>
+  <td align=right>0.138148</td>
+  <td align=right>0.005178</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down</td>
+  <td align=right>3921</td>
+  <td align=right>0.118092</td>
+  <td align=right>0.113335</td>
+  <td align=right>0.123021</td>
+  <td align=right>0.004929</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down-Left</td>
+  <td align=right>4383</td>
+  <td align=right>0.132006</td>
+  <td align=right>0.127009</td>
+  <td align=right>0.137169</td>
+  <td align=right>0.005162</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
+  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>实验 1b - Doors</td>
+  <td colspan=6 style='mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
+  <td class=xl70>频数</td>
+  <td class=xl70>估计概率</td>
+  <td class=xl70>下界</td>
+  <td class=xl70>上界</td>
+  <td class=xl70>误差幅度</td>
+  <td class=xl70>≤1%</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Left</td>
+  <td align=right>11098</td>
+  <td align=right>0.334247</td>
+  <td align=right>0.327812</td>
+  <td align=right>0.340744</td>
+  <td align=right>0.006497</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up</td>
+  <td align=right>11166</td>
+  <td align=right>0.336295</td>
+  <td align=right>0.32985</td>
+  <td align=right>0.342801</td>
+  <td align=right>0.006506</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Right</td>
+  <td align=right>11026</td>
+  <td align=right>0.332078</td>
+  <td align=right>0.325655</td>
+  <td align=right>0.338565</td>
+  <td align=right>0.006487</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down</td>
+  <td align=right>11391</td>
+  <td align=right>0.343071</td>
+  <td align=right>0.336594</td>
+  <td align=right>0.349608</td>
+  <td align=right>0.006536</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>实验 1b - Directi<span
+  style='display:none'>ons</span></td>
+  <td colspan=6 style='mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
+  <td class=xl70>频数</td>
+  <td class=xl70>估计概率</td>
+  <td class=xl70>下界</td>
+  <td class=xl70>上界</td>
+  <td class=xl70>误差幅度</td>
+  <td class=xl70>≤1%</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Left</td>
+  <td align=right>3870</td>
+  <td align=right>0.116556</td>
+  <td align=right>0.111827</td>
+  <td align=right>0.121458</td>
+  <td align=right>0.004902</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up-Left</td>
+  <td align=right>4450</td>
+  <td align=right>0.134024</td>
+  <td align=right>0.128994</td>
+  <td align=right>0.139219</td>
+  <td align=right>0.005195</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up</td>
+  <td align=right>3867</td>
+  <td align=right>0.116465</td>
+  <td align=right>0.111738</td>
+  <td align=right>0.121366</td>
+  <td align=right>0.0049</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up-Right</td>
+  <td align=right>4468</td>
+  <td align=right>0.134566</td>
+  <td align=right>0.129527</td>
+  <td align=right>0.139769</td>
+  <td align=right>0.005203</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Right</td>
+  <td align=right>3725</td>
+  <td align=right>0.112189</td>
+  <td align=right>0.10754</td>
+  <td align=right>0.117012</td>
+  <td align=right>0.004823</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down-Right</td>
+  <td align=right>4488</td>
+  <td align=right>0.135169</td>
+  <td align=right>0.13012</td>
+  <td align=right>0.140381</td>
+  <td align=right>0.005213</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down</td>
+  <td align=right>3926</td>
+  <td align=right>0.118242</td>
+  <td align=right>0.113483</td>
+  <td align=right>0.123174</td>
+  <td align=right>0.004932</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down-Left</td>
+  <td align=right>4409</td>
+  <td align=right>0.132789</td>
+  <td align=right>0.12778</td>
+  <td align=right>0.137964</td>
+  <td align=right>0.005175</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
+  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>实验 1c - Doors</td>
+  <td colspan=6 style='mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
+  <td class=xl70>频数</td>
+  <td class=xl70>估计概率</td>
+  <td class=xl70>下界</td>
+  <td class=xl70>上界</td>
+  <td class=xl70>误差幅度</td>
+  <td class=xl70>≤1%</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Left</td>
+  <td align=right>11048</td>
+  <td align=right>0.332741</td>
+  <td align=right>0.326314</td>
+  <td align=right>0.339231</td>
+  <td align=right>0.00649</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up</td>
+  <td align=right>9503</td>
+  <td align=right>0.286209</td>
+  <td align=right>0.280054</td>
+  <td align=right>0.292444</td>
+  <td align=right>0.006235</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Right</td>
+  <td align=right>10274</td>
+  <td align=right>0.30943</td>
+  <td align=right>0.30313</td>
+  <td align=right>0.315802</td>
+  <td align=right>0.006372</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down</td>
+  <td align=right>11754</td>
+  <td align=right>0.354004</td>
+  <td align=right>0.347477</td>
+  <td align=right>0.360586</td>
+  <td align=right>0.006582</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>实验 1c - Directi<span
+  style='display:none'>ons</span></td>
+  <td colspan=6 style='mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
+  <td class=xl70>频数</td>
+  <td class=xl70>估计概率</td>
+  <td class=xl70>下界</td>
+  <td class=xl70>上界</td>
+  <td class=xl70>误差幅度</td>
+  <td class=xl70>≤1%</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Left</td>
+  <td align=right>3789</td>
+  <td align=right>0.114116</td>
+  <td align=right>0.109432</td>
+  <td align=right>0.118975</td>
+  <td align=right>0.004858</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up-Left</td>
+  <td align=right>4607</td>
+  <td align=right>0.138753</td>
+  <td align=right>0.133646</td>
+  <td align=right>0.144021</td>
+  <td align=right>0.005269</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up</td>
+  <td align=right>3418</td>
+  <td align=right>0.102943</td>
+  <td align=right>0.098471</td>
+  <td align=right>0.107592</td>
+  <td align=right>0.00465</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up-Right</td>
+  <td align=right>4343</td>
+  <td align=right>0.130801</td>
+  <td align=right>0.125825</td>
+  <td align=right>0.135944</td>
+  <td align=right>0.005143</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Right</td>
+  <td align=right>3468</td>
+  <td align=right>0.104448</td>
+  <td align=right>0.099948</td>
+  <td align=right>0.109127</td>
+  <td align=right>0.004679</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down-Right</td>
+  <td align=right>4612</td>
+  <td align=right>0.138903</td>
+  <td align=right>0.133795</td>
+  <td align=right>0.144174</td>
+  <td align=right>0.005271</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down</td>
+  <td align=right>4010</td>
+  <td align=right>0.120772</td>
+  <td align=right>0.115967</td>
+  <td align=right>0.125748</td>
+  <td align=right>0.004976</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down-Left</td>
+  <td align=right>4956</td>
+  <td align=right>0.149264</td>
+  <td align=right>0.143995</td>
+  <td align=right>0.15469</td>
+  <td align=right>0.005426</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
+  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>实验 1d - Doors</td>
+  <td colspan=6 style='mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
+  <td class=xl70>频数</td>
+  <td class=xl70>估计概率</td>
+  <td class=xl70>下界</td>
+  <td class=xl70>上界</td>
+  <td class=xl70>误差幅度</td>
+  <td class=xl70>≤1%</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Left</td>
+  <td align=right>10968</td>
+  <td align=right>0.330332</td>
+  <td align=right>0.323917</td>
+  <td align=right>0.33681</td>
+  <td align=right>0.006478</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up</td>
+  <td align=right>9503</td>
+  <td align=right>0.286209</td>
+  <td align=right>0.280054</td>
+  <td align=right>0.292444</td>
+  <td align=right>0.006235</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Right</td>
+  <td align=right>10310</td>
+  <td align=right>0.310514</td>
+  <td align=right>0.304208</td>
+  <td align=right>0.316892</td>
+  <td align=right>0.006378</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down</td>
+  <td align=right>11847</td>
+  <td align=right>0.356805</td>
+  <td align=right>0.350266</td>
+  <td align=right>0.363398</td>
+  <td align=right>0.006593</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>实验 1d - Directi<span
+  style='display:none'>ons</span></td>
+  <td colspan=6 style='mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
+  <td class=xl70>频数</td>
+  <td class=xl70>估计概率</td>
+  <td class=xl70>下界</td>
+  <td class=xl70>上界</td>
+  <td class=xl70>误差幅度</td>
+  <td class=xl70>≤1%</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Left</td>
+  <td align=right>3652</td>
+  <td align=right>0.10999</td>
+  <td align=right>0.105382</td>
+  <td align=right>0.114773</td>
+  <td align=right>0.004783</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up-Left</td>
+  <td align=right>4664</td>
+  <td align=right>0.140469</td>
+  <td align=right>0.135336</td>
+  <td align=right>0.145764</td>
+  <td align=right>0.005295</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up</td>
+  <td align=right>3392</td>
+  <td align=right>0.102159</td>
+  <td align=right>0.097704</td>
+  <td align=right>0.106794</td>
+  <td align=right>0.004635</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up-Right</td>
+  <td align=right>4326</td>
+  <td align=right>0.130289</td>
+  <td align=right>0.125321</td>
+  <td align=right>0.135424</td>
+  <td align=right>0.005135</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Right</td>
+  <td align=right>3467</td>
+  <td align=right>0.104418</td>
+  <td align=right>0.099918</td>
+  <td align=right>0.109097</td>
+  <td align=right>0.004678</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down-Right</td>
+  <td align=right>4776</td>
+  <td align=right>0.143842</td>
+  <td align=right>0.138656</td>
+  <td align=right>0.149189</td>
+  <td align=right>0.005346</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down</td>
+  <td align=right>3958</td>
+  <td align=right>0.119206</td>
+  <td align=right>0.114429</td>
+  <td align=right>0.124154</td>
+  <td align=right>0.004948</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down-Left</td>
+  <td align=right>4968</td>
+  <td align=right>0.149625</td>
+  <td align=right>0.144351</td>
+  <td align=right>0.155057</td>
+  <td align=right>0.005432</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
+  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>实验 3 - Doors</td>
+  <td colspan=6 style='mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
+  <td class=xl70>频数</td>
+  <td class=xl70>估计概率</td>
+  <td class=xl70>下界</td>
+  <td class=xl70>上界</td>
+  <td class=xl70>误差幅度</td>
+  <td class=xl70>≤1%</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Left</td>
+  <td align=right>10979</td>
+  <td align=right>0.330663</td>
+  <td align=right>0.324247</td>
+  <td align=right>0.337143</td>
+  <td align=right>0.00648</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up</td>
+  <td align=right>10957</td>
+  <td align=right>0.33</td>
+  <td align=right>0.323587</td>
+  <td align=right>0.336477</td>
+  <td align=right>0.006477</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Right</td>
+  <td align=right>11000</td>
+  <td align=right>0.331295</td>
+  <td align=right>0.324876</td>
+  <td align=right>0.337778</td>
+  <td align=right>0.006483</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down</td>
+  <td align=right>11026</td>
+  <td align=right>0.332078</td>
+  <td align=right>0.325655</td>
+  <td align=right>0.338565</td>
+  <td align=right>0.006487</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>实验 3 - Directio<span
+  style='display:none'>ns</span></td>
+  <td colspan=6 style='mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
+  <td class=xl70>频数</td>
+  <td class=xl70>估计概率</td>
+  <td class=xl70>下界</td>
+  <td class=xl70>上界</td>
+  <td class=xl70>误差幅度</td>
+  <td class=xl70>≤1%</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Left</td>
+  <td align=right>4318</td>
+  <td align=right>0.130048</td>
+  <td align=right>0.125084</td>
+  <td align=right>0.135179</td>
+  <td align=right>0.005131</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up-Left</td>
+  <td align=right>4115</td>
+  <td align=right>0.123935</td>
+  <td align=right>0.119074</td>
+  <td align=right>0.128964</td>
+  <td align=right>0.005029</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up</td>
+  <td align=right>4303</td>
+  <td align=right>0.129597</td>
+  <td align=right>0.12464</td>
+  <td align=right>0.13472</td>
+  <td align=right>0.005123</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up-Right</td>
+  <td align=right>4151</td>
+  <td align=right>0.125019</td>
+  <td align=right>0.12014</td>
+  <td align=right>0.130067</td>
+  <td align=right>0.005048</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Right</td>
+  <td align=right>4255</td>
+  <td align=right>0.128151</td>
+  <td align=right>0.123219</td>
+  <td align=right>0.133251</td>
+  <td align=right>0.0051</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down-Right</td>
+  <td align=right>3829</td>
+  <td align=right>0.115321</td>
+  <td align=right>0.110614</td>
+  <td align=right>0.120201</td>
+  <td align=right>0.00488</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down</td>
+  <td align=right>4244</td>
+  <td align=right>0.12782</td>
+  <td align=right>0.122893</td>
+  <td align=right>0.132914</td>
+  <td align=right>0.005094</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down-Left</td>
+  <td align=right>3988</td>
+  <td align=right>0.12011</td>
+  <td align=right>0.115317</td>
+  <td align=right>0.125074</td>
+  <td align=right>0.004964</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
+  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>实验 3a - Doors</td>
+  <td colspan=6 style='mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
+  <td class=xl70>频数</td>
+  <td class=xl70>估计概率</td>
+  <td class=xl70>下界</td>
+  <td class=xl70>上界</td>
+  <td class=xl70>误差幅度</td>
+  <td class=xl70>≤1%</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Left</td>
+  <td align=right>10994</td>
+  <td align=right>0.331115</td>
+  <td align=right>0.324696</td>
+  <td align=right>0.337597</td>
+  <td align=right>0.006482</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up</td>
+  <td align=right>10926</td>
+  <td align=right>0.329067</td>
+  <td align=right>0.322659</td>
+  <td align=right>0.335539</td>
+  <td align=right>0.006472</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Right</td>
+  <td align=right>11004</td>
+  <td align=right>0.331416</td>
+  <td align=right>0.324996</td>
+  <td align=right>0.337899</td>
+  <td align=right>0.006483</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down</td>
+  <td align=right>11097</td>
+  <td align=right>0.334217</td>
+  <td align=right>0.327783</td>
+  <td align=right>0.340713</td>
+  <td align=right>0.006497</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>实验 3a - Directi<span
+  style='display:none'>ons</span></td>
+  <td colspan=6 style='mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
+  <td class=xl70>频数</td>
+  <td class=xl70>估计概率</td>
+  <td class=xl70>下界</td>
+  <td class=xl70>上界</td>
+  <td class=xl70>误差幅度</td>
+  <td class=xl70>≤1%</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Left</td>
+  <td align=right>4341</td>
+  <td align=right>0.130741</td>
+  <td align=right>0.125765</td>
+  <td align=right>0.135883</td>
+  <td align=right>0.005142</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up-Left</td>
+  <td align=right>4042</td>
+  <td align=right>0.121736</td>
+  <td align=right>0.116914</td>
+  <td align=right>0.126728</td>
+  <td align=right>0.004992</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up</td>
+  <td align=right>4163</td>
+  <td align=right>0.12538</td>
+  <td align=right>0.120495</td>
+  <td align=right>0.130434</td>
+  <td align=right>0.005054</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up-Right</td>
+  <td align=right>4120</td>
+  <td align=right>0.124085</td>
+  <td align=right>0.119222</td>
+  <td align=right>0.129117</td>
+  <td align=right>0.005032</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Right</td>
+  <td align=right>4388</td>
+  <td align=right>0.132157</td>
+  <td align=right>0.127157</td>
+  <td align=right>0.137322</td>
+  <td align=right>0.005165</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down-Right</td>
+  <td align=right>3903</td>
+  <td align=right>0.11755</td>
+  <td align=right>0.112802</td>
+  <td align=right>0.122469</td>
+  <td align=right>0.004919</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down</td>
+  <td align=right>4155</td>
+  <td align=right>0.125139</td>
+  <td align=right>0.120258</td>
+  <td align=right>0.130189</td>
+  <td align=right>0.00505</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down-Left</td>
+  <td align=right>4091</td>
+  <td align=right>0.123212</td>
+  <td align=right>0.118364</td>
+  <td align=right>0.128229</td>
+  <td align=right>0.005017</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
+  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>实验 3b - Doors</td>
+  <td colspan=6 style='mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
+  <td class=xl70>频数</td>
+  <td class=xl70>估计概率</td>
+  <td class=xl70>下界</td>
+  <td class=xl70>上界</td>
+  <td class=xl70>误差幅度</td>
+  <td class=xl70>≤1%</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Left</td>
+  <td align=right>10973</td>
+  <td align=right>0.330482</td>
+  <td align=right>0.324067</td>
+  <td align=right>0.336961</td>
+  <td align=right>0.006479</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up</td>
+  <td align=right>11015</td>
+  <td align=right>0.331747</td>
+  <td align=right>0.325325</td>
+  <td align=right>0.338232</td>
+  <td align=right>0.006485</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Right</td>
+  <td align=right>10951</td>
+  <td align=right>0.32982</td>
+  <td align=right>0.323408</td>
+  <td align=right>0.336295</td>
+  <td align=right>0.006476</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down</td>
+  <td align=right>11037</td>
+  <td align=right>0.33241</td>
+  <td align=right>0.325985</td>
+  <td align=right>0.338898</td>
+  <td align=right>0.006488</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>实验 3b - Directi<span
+  style='display:none'>ons</span></td>
+  <td colspan=6 style='mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
+  <td class=xl70>频数</td>
+  <td class=xl70>估计概率</td>
+  <td class=xl70>下界</td>
+  <td class=xl70>上界</td>
+  <td class=xl70>误差幅度</td>
+  <td class=xl70>≤1%</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Left</td>
+  <td align=right>4325</td>
+  <td align=right>0.130259</td>
+  <td align=right>0.125292</td>
+  <td align=right>0.135394</td>
+  <td align=right>0.005134</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up-Left</td>
+  <td align=right>4043</td>
+  <td align=right>0.121766</td>
+  <td align=right>0.116944</td>
+  <td align=right>0.126759</td>
+  <td align=right>0.004993</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up</td>
+  <td align=right>4308</td>
+  <td align=right>0.129747</td>
+  <td align=right>0.124788</td>
+  <td align=right>0.134873</td>
+  <td align=right>0.005126</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up-Right</td>
+  <td align=right>4224</td>
+  <td align=right>0.127217</td>
+  <td align=right>0.122301</td>
+  <td align=right>0.132302</td>
+  <td align=right>0.005084</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Right</td>
+  <td align=right>4256</td>
+  <td align=right>0.128181</td>
+  <td align=right>0.123248</td>
+  <td align=right>0.133281</td>
+  <td align=right>0.0051</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down-Right</td>
+  <td align=right>3886</td>
+  <td align=right>0.117038</td>
+  <td align=right>0.1123</td>
+  <td align=right>0.121948</td>
+  <td align=right>0.00491</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down</td>
+  <td align=right>4172</td>
+  <td align=right>0.125651</td>
+  <td align=right>0.120762</td>
+  <td align=right>0.13071</td>
+  <td align=right>0.005058</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down-Left</td>
+  <td align=right>3989</td>
+  <td align=right>0.12014</td>
+  <td align=right>0.115346</td>
+  <td align=right>0.125104</td>
+  <td align=right>0.004965</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
+  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>实验 3c - Doors</td>
+  <td colspan=6 style='mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
+  <td class=xl70>频数</td>
+  <td class=xl70>估计概率</td>
+  <td class=xl70>下界</td>
+  <td class=xl70>上界</td>
+  <td class=xl70>误差幅度</td>
+  <td class=xl70>≤1%</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Left</td>
+  <td align=right>10855</td>
+  <td align=right>0.326928</td>
+  <td align=right>0.320531</td>
+  <td align=right>0.33339</td>
+  <td align=right>0.006462</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up</td>
+  <td align=right>11351</td>
+  <td align=right>0.341867</td>
+  <td align=right>0.335395</td>
+  <td align=right>0.348398</td>
+  <td align=right>0.006531</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Right</td>
+  <td align=right>10770</td>
+  <td align=right>0.324368</td>
+  <td align=right>0.317985</td>
+  <td align=right>0.330818</td>
+  <td align=right>0.006449</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down</td>
+  <td align=right>10746</td>
+  <td align=right>0.323645</td>
+  <td align=right>0.317266</td>
+  <td align=right>0.330091</td>
+  <td align=right>0.006446</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>实验 3c - Directi<span
+  style='display:none'>ons</span></td>
+  <td colspan=6 style='mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
+  <td class=xl70>频数</td>
+  <td class=xl70>估计概率</td>
+  <td class=xl70>下界</td>
+  <td class=xl70>上界</td>
+  <td class=xl70>误差幅度</td>
+  <td class=xl70>≤1%</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Left</td>
+  <td align=right>3464</td>
+  <td align=right>0.104328</td>
+  <td align=right>0.099829</td>
+  <td align=right>0.109005</td>
+  <td align=right>0.004677</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up-Left</td>
+  <td align=right>5493</td>
+  <td align=right>0.165437</td>
+  <td align=right>0.159936</td>
+  <td align=right>0.171088</td>
+  <td align=right>0.005651</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up</td>
+  <td align=right>4981</td>
+  <td align=right>0.150017</td>
+  <td align=right>0.144737</td>
+  <td align=right>0.155454</td>
+  <td align=right>0.005437</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up-Right</td>
+  <td align=right>5563</td>
+  <td align=right>0.167545</td>
+  <td align=right>0.162016</td>
+  <td align=right>0.173224</td>
+  <td align=right>0.005679</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Right</td>
+  <td align=right>3295</td>
+  <td align=right>0.099238</td>
+  <td align=right>0.094841</td>
+  <td align=right>0.103815</td>
+  <td align=right>0.004577</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down-Right</td>
+  <td align=right>3238</td>
+  <td align=right>0.097521</td>
+  <td align=right>0.09316</td>
+  <td align=right>0.102064</td>
+  <td align=right>0.004543</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down</td>
+  <td align=right>3731</td>
+  <td align=right>0.112369</td>
+  <td align=right>0.107717</td>
+  <td align=right>0.117196</td>
+  <td align=right>0.004827</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down-Left</td>
+  <td align=right>3438</td>
+  <td align=right>0.103545</td>
+  <td align=right>0.099062</td>
+  <td align=right>0.108206</td>
+  <td align=right>0.004662</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
+  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>实验 3d - Doors</td>
+  <td colspan=6 style='mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
+  <td class=xl70>频数</td>
+  <td class=xl70>估计概率</td>
+  <td class=xl70>下界</td>
+  <td class=xl70>上界</td>
+  <td class=xl70>误差幅度</td>
+  <td class=xl70>≤1%</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Left</td>
+  <td align=right>11132</td>
+  <td align=right>0.335271</td>
+  <td align=right>0.328831</td>
+  <td align=right>0.341772</td>
+  <td align=right>0.006501</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up</td>
+  <td align=right>10950</td>
+  <td align=right>0.329789</td>
+  <td align=right>0.323378</td>
+  <td align=right>0.336265</td>
+  <td align=right>0.006476</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Right</td>
+  <td align=right>11281</td>
+  <td align=right>0.339758</td>
+  <td align=right>0.333297</td>
+  <td align=right>0.34628</td>
+  <td align=right>0.006522</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down</td>
+  <td align=right>10813</td>
+  <td align=right>0.325663</td>
+  <td align=right>0.319273</td>
+  <td align=right>0.332119</td>
+  <td align=right>0.006456</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>实验 3d - Directi<span
+  style='display:none'>ons</span></td>
+  <td colspan=6 style='mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
+  <td class=xl70>频数</td>
+  <td class=xl70>估计概率</td>
+  <td class=xl70>下界</td>
+  <td class=xl70>上界</td>
+  <td class=xl70>误差幅度</td>
+  <td class=xl70>≤1%</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Left</td>
+  <td align=right>4177</td>
+  <td align=right>0.125802</td>
+  <td align=right>0.12091</td>
+  <td align=right>0.130863</td>
+  <td align=right>0.005061</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up-Left</td>
+  <td align=right>4553</td>
+  <td align=right>0.137126</td>
+  <td align=right>0.132046</td>
+  <td align=right>0.14237</td>
+  <td align=right>0.005244</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up</td>
+  <td align=right>4128</td>
+  <td align=right>0.124326</td>
+  <td align=right>0.119459</td>
+  <td align=right>0.129362</td>
+  <td align=right>0.005036</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up-Right</td>
+  <td align=right>4813</td>
+  <td align=right>0.144957</td>
+  <td align=right>0.139754</td>
+  <td align=right>0.15032</td>
+  <td align=right>0.005363</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Right</td>
+  <td align=right>3987</td>
+  <td align=right>0.12008</td>
+  <td align=right>0.115287</td>
+  <td align=right>0.125043</td>
+  <td align=right>0.004964</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down-Right</td>
+  <td align=right>3966</td>
+  <td align=right>0.119447</td>
+  <td align=right>0.114666</td>
+  <td align=right>0.1244</td>
+  <td align=right>0.004953</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down</td>
+  <td align=right>3607</td>
+  <td align=right>0.108635</td>
+  <td align=right>0.104053</td>
+  <td align=right>0.113393</td>
+  <td align=right>0.004758</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down-Left</td>
+  <td align=right>3972</td>
+  <td align=right>0.119628</td>
+  <td align=right>0.114843</td>
+  <td align=right>0.124583</td>
+  <td align=right>0.004956</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
+  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>实验 5 - Doors</td>
+  <td colspan=6 style='mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
+  <td class=xl70>频数</td>
+  <td class=xl70>估计概率</td>
+  <td class=xl70>下界</td>
+  <td class=xl70>上界</td>
+  <td class=xl70>误差幅度</td>
+  <td class=xl70>≤1%</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Left</td>
+  <td align=right>13660</td>
+  <td align=right>0.411409</td>
+  <td align=right>0.404681</td>
+  <td align=right>0.41817</td>
+  <td align=right>0.006761</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up</td>
+  <td align=right>0</td>
+  <td align=right>0</td>
+  <td align=right>0</td>
+  <td align=right>0.000188</td>
+  <td align=right>0.000188</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Right</td>
+  <td align=right>13916</td>
+  <td align=right>0.419119</td>
+  <td align=right>0.412371</td>
+  <td align=right>0.425897</td>
+  <td align=right>0.006778</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down</td>
+  <td align=right>11141</td>
+  <td align=right>0.335542</td>
+  <td align=right>0.329101</td>
+  <td align=right>0.342045</td>
+  <td align=right>0.006503</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>实验 5 - Directio<span
+  style='display:none'>ns</span></td>
+  <td colspan=6 style='mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
+  <td class=xl70>频数</td>
+  <td class=xl70>估计概率</td>
+  <td class=xl70>下界</td>
+  <td class=xl70>上界</td>
+  <td class=xl70>误差幅度</td>
+  <td class=xl70>≤1%</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Left</td>
+  <td align=right>3845</td>
+  <td align=right>0.115803</td>
+  <td align=right>0.111087</td>
+  <td align=right>0.120691</td>
+  <td align=right>0.004889</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up-Left</td>
+  <td align=right>4345</td>
+  <td align=right>0.130862</td>
+  <td align=right>0.125884</td>
+  <td align=right>0.136006</td>
+  <td align=right>0.005144</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up</td>
+  <td align=right>5026</td>
+  <td align=right>0.151372</td>
+  <td align=right>0.146072</td>
+  <td align=right>0.156829</td>
+  <td align=right>0.005457</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up-Right</td>
+  <td align=right>4324</td>
+  <td align=right>0.130229</td>
+  <td align=right>0.125262</td>
+  <td align=right>0.135363</td>
+  <td align=right>0.005134</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Right</td>
+  <td align=right>4096</td>
+  <td align=right>0.123362</td>
+  <td align=right>0.118512</td>
+  <td align=right>0.128382</td>
+  <td align=right>0.00502</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down-Right</td>
+  <td align=right>3500</td>
+  <td align=right>0.105412</td>
+  <td align=right>0.100893</td>
+  <td align=right>0.110109</td>
+  <td align=right>0.004697</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down</td>
+  <td align=right>4510</td>
+  <td align=right>0.135831</td>
+  <td align=right>0.130772</td>
+  <td align=right>0.141054</td>
+  <td align=right>0.005223</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down-Left</td>
+  <td align=right>3557</td>
+  <td align=right>0.107129</td>
+  <td align=right>0.102576</td>
+  <td align=right>0.111859</td>
+  <td align=right>0.00473</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
+  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>实验 5a - Doors</td>
+  <td colspan=6 style='mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
+  <td class=xl70>频数</td>
+  <td class=xl70>估计概率</td>
+  <td class=xl70>下界</td>
+  <td class=xl70>上界</td>
+  <td class=xl70>误差幅度</td>
+  <td class=xl70>≤1%</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Left</td>
+  <td align=right>13709</td>
+  <td align=right>0.412884</td>
+  <td align=right>0.406153</td>
+  <td align=right>0.419649</td>
+  <td align=right>0.006765</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up</td>
+  <td align=right>0</td>
+  <td align=right>0</td>
+  <td align=right>0</td>
+  <td align=right>0.000188</td>
+  <td align=right>0.000188</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Right</td>
+  <td align=right>13992</td>
+  <td align=right>0.421408</td>
+  <td align=right>0.414655</td>
+  <td align=right>0.42819</td>
+  <td align=right>0.006783</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down</td>
+  <td align=right>11043</td>
+  <td align=right>0.33259</td>
+  <td align=right>0.326164</td>
+  <td align=right>0.339079</td>
+  <td align=right>0.006489</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>实验 5a - Directi<span
+  style='display:none'>ons</span></td>
+  <td colspan=6 style='mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
+  <td class=xl70>频数</td>
+  <td class=xl70>估计概率</td>
+  <td class=xl70>下界</td>
+  <td class=xl70>上界</td>
+  <td class=xl70>误差幅度</td>
+  <td class=xl70>≤1%</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Left</td>
+  <td align=right>4131</td>
+  <td align=right>0.124416</td>
+  <td align=right>0.119548</td>
+  <td align=right>0.129454</td>
+  <td align=right>0.005038</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up-Left</td>
+  <td align=right>4221</td>
+  <td align=right>0.127127</td>
+  <td align=right>0.122212</td>
+  <td align=right>0.13221</td>
+  <td align=right>0.005083</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up</td>
+  <td align=right>4825</td>
+  <td align=right>0.145318</td>
+  <td align=right>0.14011</td>
+  <td align=right>0.150687</td>
+  <td align=right>0.005368</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up-Right</td>
+  <td align=right>4169</td>
+  <td align=right>0.125561</td>
+  <td align=right>0.120673</td>
+  <td align=right>0.130618</td>
+  <td align=right>0.005057</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Right</td>
+  <td align=right>4312</td>
+  <td align=right>0.129868</td>
+  <td align=right>0.124907</td>
+  <td align=right>0.134996</td>
+  <td align=right>0.005128</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down-Right</td>
+  <td align=right>3553</td>
+  <td align=right>0.107008</td>
+  <td align=right>0.102458</td>
+  <td align=right>0.111736</td>
+  <td align=right>0.004728</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down</td>
+  <td align=right>4369</td>
+  <td align=right>0.131584</td>
+  <td align=right>0.126595</td>
+  <td align=right>0.13674</td>
+  <td align=right>0.005156</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down-Left</td>
+  <td align=right>3623</td>
+  <td align=right>0.109117</td>
+  <td align=right>0.104526</td>
+  <td align=right>0.113884</td>
+  <td align=right>0.004767</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
+  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>实验 5b - Doors</td>
+  <td colspan=6 style='mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
+  <td class=xl70>频数</td>
+  <td class=xl70>估计概率</td>
+  <td class=xl70>下界</td>
+  <td class=xl70>上界</td>
+  <td class=xl70>误差幅度</td>
+  <td class=xl70>≤1%</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Left</td>
+  <td align=right>13659</td>
+  <td align=right>0.411378</td>
+  <td align=right>0.404651</td>
+  <td align=right>0.41814</td>
+  <td align=right>0.006761</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up</td>
+  <td align=right>0</td>
+  <td align=right>0</td>
+  <td align=right>0</td>
+  <td align=right>0.000188</td>
+  <td align=right>0.000188</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Right</td>
+  <td align=right>13935</td>
+  <td align=right>0.419691</td>
+  <td align=right>0.412942</td>
+  <td align=right>0.42647</td>
+  <td align=right>0.006779</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down</td>
+  <td align=right>11109</td>
+  <td align=right>0.334578</td>
+  <td align=right>0.328142</td>
+  <td align=right>0.341076</td>
+  <td align=right>0.006498</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>实验 5b - Directi<span
+  style='display:none'>ons</span></td>
+  <td colspan=6 style='mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
+  <td class=xl70>频数</td>
+  <td class=xl70>估计概率</td>
+  <td class=xl70>下界</td>
+  <td class=xl70>上界</td>
+  <td class=xl70>误差幅度</td>
+  <td class=xl70>≤1%</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Left</td>
+  <td align=right>3899</td>
+  <td align=right>0.117429</td>
+  <td align=right>0.112684</td>
+  <td align=right>0.122346</td>
+  <td align=right>0.004917</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up-Left</td>
+  <td align=right>4308</td>
+  <td align=right>0.129747</td>
+  <td align=right>0.124788</td>
+  <td align=right>0.134873</td>
+  <td align=right>0.005126</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up</td>
+  <td align=right>5068</td>
+  <td align=right>0.152637</td>
+  <td align=right>0.147318</td>
+  <td align=right>0.158112</td>
+  <td align=right>0.005475</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up-Right</td>
+  <td align=right>4369</td>
+  <td align=right>0.131584</td>
+  <td align=right>0.126595</td>
+  <td align=right>0.13674</td>
+  <td align=right>0.005156</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Right</td>
+  <td align=right>4070</td>
+  <td align=right>0.122579</td>
+  <td align=right>0.117743</td>
+  <td align=right>0.127586</td>
+  <td align=right>0.005006</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down-Right</td>
+  <td align=right>3461</td>
+  <td align=right>0.104238</td>
+  <td align=right>0.099741</td>
+  <td align=right>0.108912</td>
+  <td align=right>0.004675</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down</td>
+  <td align=right>4517</td>
+  <td align=right>0.136042</td>
+  <td align=right>0.130979</td>
+  <td align=right>0.141269</td>
+  <td align=right>0.005227</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down-Left</td>
+  <td align=right>3511</td>
+  <td align=right>0.105743</td>
+  <td align=right>0.101217</td>
+  <td align=right>0.110447</td>
+  <td align=right>0.004704</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
+  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>实验 5c - Doors</td>
+  <td colspan=6 style='mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
+  <td class=xl70>频数</td>
+  <td class=xl70>估计概率</td>
+  <td class=xl70>下界</td>
+  <td class=xl70>上界</td>
+  <td class=xl70>误差幅度</td>
+  <td class=xl70>≤1%</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Left</td>
+  <td align=right>10727</td>
+  <td align=right>0.323073</td>
+  <td align=right>0.316697</td>
+  <td align=right>0.329516</td>
+  <td align=right>0.006443</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up</td>
+  <td align=right>10682</td>
+  <td align=right>0.321718</td>
+  <td align=right>0.315349</td>
+  <td align=right>0.328154</td>
+  <td align=right>0.006436</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Right</td>
+  <td align=right>10908</td>
+  <td align=right>0.328525</td>
+  <td align=right>0.322119</td>
+  <td align=right>0.334994</td>
+  <td align=right>0.00647</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down</td>
+  <td align=right>10880</td>
+  <td align=right>0.327681</td>
+  <td align=right>0.32128</td>
+  <td align=right>0.334147</td>
+  <td align=right>0.006466</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>实验 5c - Directi<span
+  style='display:none'>ons</span></td>
+  <td colspan=6 style='mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
+  <td class=xl70>频数</td>
+  <td class=xl70>估计概率</td>
+  <td class=xl70>下界</td>
+  <td class=xl70>上界</td>
+  <td class=xl70>误差幅度</td>
+  <td class=xl70>≤1%</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Left</td>
+  <td align=right>4277</td>
+  <td align=right>0.128814</td>
+  <td align=right>0.12387</td>
+  <td align=right>0.133924</td>
+  <td align=right>0.005111</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up-Left</td>
+  <td align=right>3833</td>
+  <td align=right>0.115441</td>
+  <td align=right>0.110732</td>
+  <td align=right>0.120323</td>
+  <td align=right>0.004882</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up</td>
+  <td align=right>4497</td>
+  <td align=right>0.13544</td>
+  <td align=right>0.130387</td>
+  <td align=right>0.140657</td>
+  <td align=right>0.005217</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up-Right</td>
+  <td align=right>3957</td>
+  <td align=right>0.119176</td>
+  <td align=right>0.1144</td>
+  <td align=right>0.124124</td>
+  <td align=right>0.004948</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Right</td>
+  <td align=right>4410</td>
+  <td align=right>0.132819</td>
+  <td align=right>0.127809</td>
+  <td align=right>0.137995</td>
+  <td align=right>0.005176</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down-Right</td>
+  <td align=right>3894</td>
+  <td align=right>0.117279</td>
+  <td align=right>0.112536</td>
+  <td align=right>0.122193</td>
+  <td align=right>0.004915</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down</td>
+  <td align=right>4394</td>
+  <td align=right>0.132337</td>
+  <td align=right>0.127335</td>
+  <td align=right>0.137505</td>
+  <td align=right>0.005168</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down-Left</td>
+  <td align=right>3941</td>
+  <td align=right>0.118694</td>
+  <td align=right>0.113926</td>
+  <td align=right>0.123634</td>
+  <td align=right>0.004939</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
+  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>实验 5d - Doors</td>
+  <td colspan=6 style='mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
+  <td class=xl70>频数</td>
+  <td class=xl70>估计概率</td>
+  <td class=xl70>下界</td>
+  <td class=xl70>上界</td>
+  <td class=xl70>误差幅度</td>
+  <td class=xl70>≤1%</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Left</td>
+  <td align=right>10838</td>
+  <td align=right>0.326416</td>
+  <td align=right>0.320022</td>
+  <td align=right>0.332876</td>
+  <td align=right>0.006459</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up</td>
+  <td align=right>10661</td>
+  <td align=right>0.321085</td>
+  <td align=right>0.31472</td>
+  <td align=right>0.327518</td>
+  <td align=right>0.006433</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Right</td>
+  <td align=right>10857</td>
+  <td align=right>0.326989</td>
+  <td align=right>0.320591</td>
+  <td align=right>0.333451</td>
+  <td align=right>0.006462</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down</td>
+  <td align=right>10871</td>
+  <td align=right>0.32741</td>
+  <td align=right>0.321011</td>
+  <td align=right>0.333874</td>
+  <td align=right>0.006464</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>实验 5d - Directi<span
+  style='display:none'>ons</span></td>
+  <td colspan=6 style='mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
+  <td class=xl70>频数</td>
+  <td class=xl70>估计概率</td>
+  <td class=xl70>下界</td>
+  <td class=xl70>上界</td>
+  <td class=xl70>误差幅度</td>
+  <td class=xl70>≤1%</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Left</td>
+  <td align=right>4356</td>
+  <td align=right>0.131193</td>
+  <td align=right>0.12621</td>
+  <td align=right>0.136342</td>
+  <td align=right>0.005149</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up-Left</td>
+  <td align=right>3837</td>
+  <td align=right>0.115562</td>
+  <td align=right>0.110851</td>
+  <td align=right>0.120446</td>
+  <td align=right>0.004884</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up</td>
+  <td align=right>4480</td>
+  <td align=right>0.134928</td>
+  <td align=right>0.129883</td>
+  <td align=right>0.140137</td>
+  <td align=right>0.005209</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up-Right</td>
+  <td align=right>3917</td>
+  <td align=right>0.117971</td>
+  <td align=right>0.113216</td>
+  <td align=right>0.122898</td>
+  <td align=right>0.004927</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Right</td>
+  <td align=right>4378</td>
+  <td align=right>0.131856</td>
+  <td align=right>0.126861</td>
+  <td align=right>0.137016</td>
+  <td align=right>0.00516</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down-Right</td>
+  <td align=right>3863</td>
+  <td align=right>0.116345</td>
+  <td align=right>0.11162</td>
+  <td align=right>0.121243</td>
+  <td align=right>0.004898</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down</td>
+  <td align=right>4408</td>
+  <td align=right>0.132759</td>
+  <td align=right>0.12775</td>
+  <td align=right>0.137934</td>
+  <td align=right>0.005175</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down-Left</td>
+  <td align=right>3964</td>
+  <td align=right>0.119387</td>
+  <td align=right>0.114607</td>
+  <td align=right>0.124338</td>
+  <td align=right>0.004952</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
+  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>实验 7 - Doors</td>
+  <td colspan=6 style='mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
+  <td class=xl70>频数</td>
+  <td class=xl70>估计概率</td>
+  <td class=xl70>下界</td>
+  <td class=xl70>上界</td>
+  <td class=xl70>误差幅度</td>
+  <td class=xl70>≤1%</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Left</td>
+  <td align=right>10592</td>
+  <td align=right>0.319007</td>
+  <td align=right>0.312653</td>
+  <td align=right>0.32543</td>
+  <td align=right>0.006422</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up</td>
+  <td align=right>10936</td>
+  <td align=right>0.329368</td>
+  <td align=right>0.322958</td>
+  <td align=right>0.335842</td>
+  <td align=right>0.006474</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Right</td>
+  <td align=right>10580</td>
+  <td align=right>0.318646</td>
+  <td align=right>0.312294</td>
+  <td align=right>0.325066</td>
+  <td align=right>0.006421</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down</td>
+  <td align=right>10947</td>
+  <td align=right>0.329699</td>
+  <td align=right>0.323288</td>
+  <td align=right>0.336174</td>
+  <td align=right>0.006475</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>实验 7 - Directio<span
+  style='display:none'>ns</span></td>
+  <td colspan=6 style='mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
+  <td class=xl70>频数</td>
+  <td class=xl70>估计概率</td>
+  <td class=xl70>下界</td>
+  <td class=xl70>上界</td>
+  <td class=xl70>误差幅度</td>
+  <td class=xl70>≤1%</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Left</td>
+  <td align=right>4033</td>
+  <td align=right>0.121465</td>
+  <td align=right>0.116648</td>
+  <td align=right>0.126452</td>
+  <td align=right>0.004987</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up-Left</td>
+  <td align=right>4158</td>
+  <td align=right>0.12523</td>
+  <td align=right>0.120347</td>
+  <td align=right>0.130281</td>
+  <td align=right>0.005051</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up</td>
+  <td align=right>4676</td>
+  <td align=right>0.140831</td>
+  <td align=right>0.135692</td>
+  <td align=right>0.146131</td>
+  <td align=right>0.005301</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up-Right</td>
+  <td align=right>4081</td>
+  <td align=right>0.122911</td>
+  <td align=right>0.118068</td>
+  <td align=right>0.127923</td>
+  <td align=right>0.005012</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Right</td>
+  <td align=right>3972</td>
+  <td align=right>0.119628</td>
+  <td align=right>0.114843</td>
+  <td align=right>0.124583</td>
+  <td align=right>0.004956</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down-Right</td>
+  <td align=right>3719</td>
+  <td align=right>0.112008</td>
+  <td align=right>0.107362</td>
+  <td align=right>0.116828</td>
+  <td align=right>0.00482</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down</td>
+  <td align=right>4645</td>
+  <td align=right>0.139897</td>
+  <td align=right>0.134773</td>
+  <td align=right>0.145183</td>
+  <td align=right>0.005286</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down-Left</td>
+  <td align=right>3919</td>
+  <td align=right>0.118032</td>
+  <td align=right>0.113276</td>
+  <td align=right>0.122959</td>
+  <td align=right>0.004928</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
+  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>实验 7a - Doors</td>
+  <td colspan=6 style='mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
+  <td class=xl70>频数</td>
+  <td class=xl70>估计概率</td>
+  <td class=xl70>下界</td>
+  <td class=xl70>上界</td>
+  <td class=xl70>误差幅度</td>
+  <td class=xl70>≤1%</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Left</td>
+  <td align=right>10801</td>
+  <td align=right>0.325302</td>
+  <td align=right>0.318914</td>
+  <td align=right>0.331756</td>
+  <td align=right>0.006454</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up</td>
+  <td align=right>10892</td>
+  <td align=right>0.328043</td>
+  <td align=right>0.32164</td>
+  <td align=right>0.33451</td>
+  <td align=right>0.006467</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Right</td>
+  <td align=right>10725</td>
+  <td align=right>0.323013</td>
+  <td align=right>0.316637</td>
+  <td align=right>0.329456</td>
+  <td align=right>0.006443</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down</td>
+  <td align=right>10828</td>
+  <td align=right>0.326115</td>
+  <td align=right>0.319722</td>
+  <td align=right>0.332573</td>
+  <td align=right>0.006458</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>实验 7a - Directi<span
+  style='display:none'>ons</span></td>
+  <td colspan=6 style='mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
+  <td class=xl70>频数</td>
+  <td class=xl70>估计概率</td>
+  <td class=xl70>下界</td>
+  <td class=xl70>上界</td>
+  <td class=xl70>误差幅度</td>
+  <td class=xl70>≤1%</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Left</td>
+  <td align=right>4426</td>
+  <td align=right>0.133301</td>
+  <td align=right>0.128283</td>
+  <td align=right>0.138484</td>
+  <td align=right>0.005183</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up-Left</td>
+  <td align=right>3862</td>
+  <td align=right>0.116315</td>
+  <td align=right>0.11159</td>
+  <td align=right>0.121212</td>
+  <td align=right>0.004898</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up</td>
+  <td align=right>4405</td>
+  <td align=right>0.132669</td>
+  <td align=right>0.127661</td>
+  <td align=right>0.137842</td>
+  <td align=right>0.005173</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up-Right</td>
+  <td align=right>3956</td>
+  <td align=right>0.119146</td>
+  <td align=right>0.11437</td>
+  <td align=right>0.124093</td>
+  <td align=right>0.004947</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Right</td>
+  <td align=right>4381</td>
+  <td align=right>0.131946</td>
+  <td align=right>0.12695</td>
+  <td align=right>0.137107</td>
+  <td align=right>0.005162</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down-Right</td>
+  <td align=right>3811</td>
+  <td align=right>0.114779</td>
+  <td align=right>0.110082</td>
+  <td align=right>0.119649</td>
+  <td align=right>0.00487</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down</td>
+  <td align=right>4485</td>
+  <td align=right>0.135078</td>
+  <td align=right>0.130031</td>
+  <td align=right>0.14029</td>
+  <td align=right>0.005211</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down-Left</td>
+  <td align=right>3877</td>
+  <td align=right>0.116767</td>
+  <td align=right>0.112034</td>
+  <td align=right>0.121672</td>
+  <td align=right>0.004906</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
+  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>实验 7b - Doors</td>
+  <td colspan=6 style='mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
+  <td class=xl70>频数</td>
+  <td class=xl70>估计概率</td>
+  <td class=xl70>下界</td>
+  <td class=xl70>上界</td>
+  <td class=xl70>误差幅度</td>
+  <td class=xl70>≤1%</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Left</td>
+  <td align=right>10680</td>
+  <td align=right>0.321658</td>
+  <td align=right>0.315289</td>
+  <td align=right>0.328094</td>
+  <td align=right>0.006436</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up</td>
+  <td align=right>10891</td>
+  <td align=right>0.328013</td>
+  <td align=right>0.32161</td>
+  <td align=right>0.33448</td>
+  <td align=right>0.006467</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Right</td>
+  <td align=right>10690</td>
+  <td align=right>0.321959</td>
+  <td align=right>0.315588</td>
+  <td align=right>0.328396</td>
+  <td align=right>0.006437</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down</td>
+  <td align=right>10886</td>
+  <td align=right>0.327862</td>
+  <td align=right>0.32146</td>
+  <td align=right>0.334328</td>
+  <td align=right>0.006466</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>实验 7b - Directi<span
+  style='display:none'>ons</span></td>
+  <td colspan=6 style='mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
+  <td class=xl70>频数</td>
+  <td class=xl70>估计概率</td>
+  <td class=xl70>下界</td>
+  <td class=xl70>上界</td>
+  <td class=xl70>误差幅度</td>
+  <td class=xl70>≤1%</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Left</td>
+  <td align=right>4136</td>
+  <td align=right>0.124567</td>
+  <td align=right>0.119696</td>
+  <td align=right>0.129607</td>
+  <td align=right>0.00504</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up-Left</td>
+  <td align=right>4071</td>
+  <td align=right>0.122609</td>
+  <td align=right>0.117772</td>
+  <td align=right>0.127616</td>
+  <td align=right>0.005007</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up</td>
+  <td align=right>4635</td>
+  <td align=right>0.139596</td>
+  <td align=right>0.134476</td>
+  <td align=right>0.144878</td>
+  <td align=right>0.005282</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up-Right</td>
+  <td align=right>4063</td>
+  <td align=right>0.122368</td>
+  <td align=right>0.117536</td>
+  <td align=right>0.127371</td>
+  <td align=right>0.005003</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Right</td>
+  <td align=right>4097</td>
+  <td align=right>0.123392</td>
+  <td align=right>0.118542</td>
+  <td align=right>0.128413</td>
+  <td align=right>0.00502</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down-Right</td>
+  <td align=right>3775</td>
+  <td align=right>0.113695</td>
+  <td align=right>0.109018</td>
+  <td align=right>0.118545</td>
+  <td align=right>0.004851</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down</td>
+  <td align=right>4553</td>
+  <td align=right>0.137126</td>
+  <td align=right>0.132046</td>
+  <td align=right>0.14237</td>
+  <td align=right>0.005244</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down-Left</td>
+  <td align=right>3873</td>
+  <td align=right>0.116646</td>
+  <td align=right>0.111915</td>
+  <td align=right>0.12155</td>
+  <td align=right>0.004903</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
+  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>实验 7c - Doors</td>
+  <td colspan=6 style='mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
+  <td class=xl70>频数</td>
+  <td class=xl70>估计概率</td>
+  <td class=xl70>下界</td>
+  <td class=xl70>上界</td>
+  <td class=xl70>误差幅度</td>
+  <td class=xl70>≤1%</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Left</td>
+  <td align=right>10780</td>
+  <td align=right>0.324669</td>
+  <td align=right>0.318284</td>
+  <td align=right>0.33112</td>
+  <td align=right>0.006451</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up</td>
+  <td align=right>10932</td>
+  <td align=right>0.329247</td>
+  <td align=right>0.322838</td>
+  <td align=right>0.335721</td>
+  <td align=right>0.006473</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Right</td>
+  <td align=right>10806</td>
+  <td align=right>0.325453</td>
+  <td align=right>0.319063</td>
+  <td align=right>0.331907</td>
+  <td align=right>0.006455</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down</td>
+  <td align=right>10865</td>
+  <td align=right>0.327229</td>
+  <td align=right>0.320831</td>
+  <td align=right>0.333693</td>
+  <td align=right>0.006463</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>实验 7c - Directi<span
+  style='display:none'>ons</span></td>
+  <td colspan=6 style='mso-ignore:colspan'></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
+  <td class=xl70>频数</td>
+  <td class=xl70>估计概率</td>
+  <td class=xl70>下界</td>
+  <td class=xl70>上界</td>
+  <td class=xl70>误差幅度</td>
+  <td class=xl70>≤1%</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Left</td>
+  <td align=right>4327</td>
+  <td align=right>0.13032</td>
+  <td align=right>0.125351</td>
+  <td align=right>0.135455</td>
+  <td align=right>0.005135</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up-Left</td>
+  <td align=right>3860</td>
+  <td align=right>0.116255</td>
+  <td align=right>0.111531</td>
+  <td align=right>0.121151</td>
+  <td align=right>0.004897</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up</td>
+  <td align=right>4468</td>
+  <td align=right>0.134566</td>
+  <td align=right>0.129527</td>
+  <td align=right>0.139769</td>
+  <td align=right>0.005203</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Up-Right</td>
+  <td align=right>3879</td>
+  <td align=right>0.116827</td>
+  <td align=right>0.112093</td>
+  <td align=right>0.121733</td>
+  <td align=right>0.004907</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Right</td>
+  <td align=right>4401</td>
+  <td align=right>0.132548</td>
+  <td align=right>0.127543</td>
+  <td align=right>0.137719</td>
+  <td align=right>0.005171</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down-Right</td>
+  <td align=right>3855</td>
+  <td align=right>0.116104</td>
+  <td align=right>0.111383</td>
+  <td align=right>0.120998</td>
+  <td align=right>0.004894</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down</td>
+  <td align=right>4509</td>
+  <td align=right>0.135801</td>
+  <td align=right>0.130742</td>
+  <td align=right>0.141024</td>
+  <td align=right>0.005223</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>Down-Left</td>
+  <td align=right>3904</td>
+  <td align=right>0.11758</td>
+  <td align=right>0.112832</td>
+  <td align=right>0.1225</td>
+  <td align=right>0.00492</td>
+  <td align=center>TRUE</td>
+ </tr>
+ <![if supportMisalignedColumns]>
+ <tr height=0 style='display:none'>
+  <td width=141 style='width:105pt'></td>
+  <td width=96 style='width:72pt'></td>
+  <td width=111 style='width:83pt'></td>
+  <td width=111 style='width:83pt'></td>
+  <td width=111 style='width:83pt'></td>
+  <td width=111 style='width:83pt'></td>
+  <td width=111 style='width:83pt'></td>
+ </tr>
+ <![endif]>
+</table>
+
+</body>
+
+</html>
