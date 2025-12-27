@@ -1,0 +1,400 @@
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+xmlns:x="urn:schemas-microsoft-com:office:excel"
+xmlns="http://www.w3.org/TR/REC-html40">
+
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=utf-8">
+<meta name=ProgId content=Excel.Sheet>
+<meta name=Generator content="Microsoft Excel 15">
+<link id=Main-File rel=Main-File href="../r+_BDIKp5_3.06w.html">
+<link rel=File-List href=filelist.xml>
+<link rel=Stylesheet href=stylesheet.css>
+<style>
+<!--table
+	{mso-displayed-decimal-separator:"\.";
+	mso-displayed-thousand-separator:"\,";}
+@page
+	{margin:.75in .7in .75in .7in;
+	mso-header-margin:.3in;
+	mso-footer-margin:.3in;}
+ruby
+	{ruby-align:left;}
+rt
+	{color:windowtext;
+	font-size:9.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:宋体;
+	mso-generic-font-family:auto;
+	mso-font-charset:134;
+	mso-char-type:none;
+	display:none;}
+-->
+</style>
+<![if !supportTabStrip]><script language="JavaScript">
+<!--
+function fnUpdateTabs()
+ {
+  if (parent.window.g_iIEVer>=4) {
+   if (parent.document.readyState=="complete"
+    && parent.frames['frTabs'].document.readyState=="complete")
+   parent.fnSetActiveSheet(7);
+  else
+   window.setTimeout("fnUpdateTabs();",150);
+ }
+}
+
+if (window.name!="frSheet")
+ window.location.replace("../r+_BDIKp5_3.06w.html");
+else
+ fnUpdateTabs();
+//-->
+</script>
+<![endif]>
+</head>
+
+<body link=blue vlink=purple>
+
+<table border=0 cellpadding=0 cellspacing=0 width=636 style='border-collapse:
+ collapse;table-layout:fixed;width:476pt'>
+ <col width=111 style='mso-width-source:userset;mso-width-alt:3771;width:83pt'>
+ <col width=141 style='mso-width-source:userset;mso-width-alt:4795;width:105pt'>
+ <col width=96 span=4 style='mso-width-source:userset;mso-width-alt:3259;
+ width:72pt'>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+  <td colspan=6 rowspan=54 height=1296 class=xl71 width=636 style='height:972.0pt;
+  width:476pt'>计算说明（本节列出脚本中用于计算与检验的公式与步骤，便于复现）：<br>
+    <br>
+    1) 概率估计<br>
+    <span style='mso-spacerun:yes'>   </span>- 观测计数 A_i 为某类别的观测次数，总试验次数为
+  N（或在两类比较中为 m = A + B）。<br>
+    <span style='mso-spacerun:yes'>   </span>- 类别的估计概率： p_hat = A / N
+  （若只比较两类，则条件概率 p_hat = A / m）。<br>
+    <br>
+    2) Wilson 置信区间（用于单个类别概率的置信区间，双侧）<br>
+    <span style='mso-spacerun:yes'>   </span>- 给定显著性水平 alpha（双侧），先计算 z =
+  Phi^{-1}(1 - alpha/2)。<br>
+    <span style='mso-spacerun:yes'>   </span>- 设 p_hat = A / N，<br>
+    <span style='mso-spacerun:yes'>     </span>denom = 1 + z^2 / N<br>
+    <span style='mso-spacerun:yes'>     </span>center = p_hat + z^2 /
+  (2N)<br>
+    <span style='mso-spacerun:yes'>     </span>rad = z * sqrt(
+  p_hat*(1-p_hat)/N + z^2/(4N^2) )<br>
+    <span style='mso-spacerun:yes'>     </span>下界 lower = (center - rad) /
+  denom<br>
+    <span style='mso-spacerun:yes'>     </span>上界 upper = (center + rad) /
+  denom<br>
+    <span style='mso-spacerun:yes'>   </span>- 区间被截断到 [0,1]。<br>
+    <br>
+    3) 两类显著性比较（用于判断 A &gt; B）<br>
+    <span style='mso-spacerun:yes'>   </span>- 只看落在 A 或 B 的样本，令 m = A +
+  B。<br>
+    <span style='mso-spacerun:yes'>   </span>- 在原假设 H0: p_A = p_B（条件下 p =
+  0.5）下，A ~ Binomial(m, 0.5)。<br>
+    <span style='mso-spacerun:yes'>   </span>- 使用精确二项检验（binomtest）做单侧检验：H1: p_A
+  &gt; 0.5（即 A 的条件概率大于 B）。<br>
+    <span style='mso-spacerun:yes'>   </span>- 得到单侧 p_value（脚本中称为原始
+  p_value）。<br>
+    <br>
+    4) 多重比较校正（组内 Bonferroni）<br>
+    <span style='mso-spacerun:yes'>   </span>- 在同一组（例如门组或某方向子组）内做所有两两比较，若组内共有 T
+  个两两比较，<br>
+    <span style='mso-spacerun:yes'>     </span>则每次检验的显著性阈值设为 alpha_per_test =
+  overall_alpha / T（overall_alpha 默认为 0.05）。<br>
+    <span style='mso-spacerun:yes'>   </span>- 仅当单侧 p_value &lt;=
+  alpha_per_test 时，记录显著结论 A&gt;B（或 B&gt;A）。<br>
+    <br>
+    5) 差值与效应量（使用总样本 N 作为分母）<br>
+    <span style='mso-spacerun:yes'>   </span>- 在两类比较中，差值定义为：<br>
+    <span style='mso-spacerun:yes'>       </span>diff_total = (A/N) - (B/N)，其中
+  N 为总样本量。<br>
+    <span style='mso-spacerun:yes'>   </span>- 这样差值直接反映在总样本中的概率差异，便于与“误差 ≤1%（按
+  N 分母）”规则对齐。<br>
+    <span style='mso-spacerun:yes'>   </span>- 在结论页中，差值单元格按以下规则着色：<br>
+    <span style='mso-spacerun:yes'>       </span>&lt;1% → 灰色；1%~2% → 黄色；≥2% →
+  绿色。<br>
+    <br>
+    6) 方向比较限制（脚本实现细节）<br>
+    <span style='mso-spacerun:yes'>   </span>- 方向分为两组：直角组 = {Left, Up, Right,
+  Down}；斜角组 = {Up-Left, Up-Right, Down-Right, Down-Left}。<br>
+    <span style='mso-spacerun:yes'>   </span>- 仅在组内做两两比较，不跨组比较。<br>
+    <br>
+    7) 概率统计表（概率统计页）<br>
+    <span style='mso-spacerun:yes'>   </span>- 每个类别的概率由原始计数除以 Total 得到：Door_X =
+  Door_X_count / Total；Dir_Y = Dir_Y_count / Total。<br>
+    <br>
+    8) 均值/方差/标准差（均值偏差页）<br>
+    <span style='mso-spacerun:yes'>   </span>- 组内均值（例如门组）: mean = mean(p_i)（忽略为
+  0 的项以避免 Total=0 的影响）。<br>
+    <span style='mso-spacerun:yes'>   </span>- 以百分比形式计算偏差列： (p_i - mean) *
+  100。<br>
+    <span style='mso-spacerun:yes'>   </span>-
+  方差（%^2）使用样本方差（ddof=0），标准差为方差的平方根（%）。<br>
+    <br>
+    本页（结论-方向）说明：<br>
+    <span style='mso-spacerun:yes'> </span>- 方向被分为两组：直角组（4 个）与斜角组（4
+  个），每组内分别做两两比较。<br>
+    <span style='mso-spacerun:yes'> </span>- 每组内比较数量均为 T = C(4,2) = 6，组内
+  Bonferroni 校正 alpha_per_test = 0.05 / 6。<br>
+    <span style='mso-spacerun:yes'> </span>- 仅在组内记录显著结论，格式同上： 实验编号 | 结论 |
+  p_value | A_count | B_count | 差值(pA-pB, N分母)。<br>
+    </td>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=24 style='mso-height-source:userset;height:18.0pt'>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl70 style='height:13.5pt'>实验编号</td>
+  <td class=xl70>结论</td>
+  <td class=xl70>p_value</td>
+  <td class=xl70>A_count</td>
+  <td class=xl70>B_count</td>
+  <td class=xl70>差值(pA-pB, <span style='display:none'>N分母)</span></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>4c</td>
+  <td>Left&gt;Up</td>
+  <td align=right>0</td>
+  <td align=right>4035</td>
+  <td align=right>986</td>
+  <td align=right style='background:#A9D08E;mso-pattern:black none'>0.099368</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>4c</td>
+  <td>Left&gt;Down</td>
+  <td align=right>1.10663E-07</td>
+  <td align=right>4035</td>
+  <td align=right>3582</td>
+  <td align=right style='background:#FFD966;mso-pattern:black none'>0.014763</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>4c</td>
+  <td>Right&gt;Up</td>
+  <td align=right>0</td>
+  <td align=right>3990</td>
+  <td align=right>986</td>
+  <td align=right style='background:#A9D08E;mso-pattern:black none'>0.097901</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>4c</td>
+  <td>Down&gt;Up</td>
+  <td align=right>0</td>
+  <td align=right>3582</td>
+  <td align=right>986</td>
+  <td align=right style='background:#A9D08E;mso-pattern:black none'>0.084604</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>4c</td>
+  <td>Right&gt;Down</td>
+  <td align=right>1.44625E-06</td>
+  <td align=right>3990</td>
+  <td align=right>3582</td>
+  <td align=right style='background:#FFD966;mso-pattern:black none'>0.013297</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>4c</td>
+  <td>Down-Right&gt;Up-Left</td>
+  <td align=right>2.18521E-89</td>
+  <td align=right>5465</td>
+  <td align=right>3569</td>
+  <td align=right style='background:#A9D08E;mso-pattern:black none'>0.061791</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>4c</td>
+  <td>Down-Left&gt;Up-Left</td>
+  <td align=right>5.15438E-86</td>
+  <td align=right>5424</td>
+  <td align=right>3569</td>
+  <td align=right style='background:#A9D08E;mso-pattern:black none'>0.060455</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>4c</td>
+  <td>Down-Right&gt;Up-Righ<span style='display:none'>t</span></td>
+  <td align=right>5.62235E-83</td>
+  <td align=right>5465</td>
+  <td align=right>3633</td>
+  <td align=right style='background:#A9D08E;mso-pattern:black none'>0.059705</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>4c</td>
+  <td>Down-Left&gt;Up-Right</td>
+  <td align=right>9.93009E-80</td>
+  <td align=right>5424</td>
+  <td align=right>3633</td>
+  <td align=right style='background:#A9D08E;mso-pattern:black none'>0.058369</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>4d</td>
+  <td>Left&gt;Up</td>
+  <td align=right>0</td>
+  <td align=right>3831</td>
+  <td align=right>934</td>
+  <td align=right style='background:#A9D08E;mso-pattern:black none'>0.094414</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>4d</td>
+  <td>Right&gt;Up</td>
+  <td align=right>0</td>
+  <td align=right>3735</td>
+  <td align=right>934</td>
+  <td align=right style='background:#A9D08E;mso-pattern:black none'>0.091285</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>4d</td>
+  <td>Down&gt;Up</td>
+  <td align=right>0</td>
+  <td align=right>3879</td>
+  <td align=right>934</td>
+  <td align=right style='background:#A9D08E;mso-pattern:black none'>0.095978</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>4d</td>
+  <td>Down-Right&gt;Up-Left</td>
+  <td align=right>6.5767E-161</td>
+  <td align=right>5831</td>
+  <td align=right>3271</td>
+  <td align=right style='background:#A9D08E;mso-pattern:black none'>0.083431</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>4d</td>
+  <td>Down-Left&gt;Up-Left</td>
+  <td align=right>9.605E-163</td>
+  <td align=right>5848</td>
+  <td align=right>3271</td>
+  <td align=right style='background:#A9D08E;mso-pattern:black none'>0.083985</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>4d</td>
+  <td>Down-Right&gt;Up-Righ<span style='display:none'>t</span></td>
+  <td align=right>3.8029E-149</td>
+  <td align=right>5831</td>
+  <td align=right>3355</td>
+  <td align=right style='background:#A9D08E;mso-pattern:black none'>0.080694</td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'>4d</td>
+  <td>Down-Left&gt;Up-Right</td>
+  <td align=right>6.4903E-151</td>
+  <td align=right>5848</td>
+  <td align=right>3355</td>
+  <td align=right style='background:#A9D08E;mso-pattern:black none'>0.081248</td>
+ </tr>
+ <![if supportMisalignedColumns]>
+ <tr height=0 style='display:none'>
+  <td width=111 style='width:83pt'></td>
+  <td width=141 style='width:105pt'></td>
+  <td width=96 style='width:72pt'></td>
+  <td width=96 style='width:72pt'></td>
+  <td width=96 style='width:72pt'></td>
+  <td width=96 style='width:72pt'></td>
+ </tr>
+ <![endif]>
+</table>
+
+</body>
+
+</html>
