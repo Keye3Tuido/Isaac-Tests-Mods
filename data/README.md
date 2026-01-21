@@ -6,7 +6,7 @@
 
 ## vba.py
 
-用于批量将xlsx转换为html
+调用BD.py，并批量将xlsx转换为html
 
 ## path.py
 

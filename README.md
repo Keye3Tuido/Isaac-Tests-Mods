@@ -58,7 +58,7 @@
 
 ## BD.py
 
-用于处理BossDirection系列模组的实验数据*.dat，生成包含实验数据、概率统计、归一化比例、门概率图和方向图的Excel文件。
+用于处理BossDirection系列模组的实验数据*.dat，生成包含实验数据、概率统计、归一化比例、门概率图和方向图的Excel文件，以及在data目录下生成statistics.md文件。
 
 ## BDs
 

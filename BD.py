@@ -9,9 +9,6 @@ import numpy as np
 from math import atan2, degrees, sqrt
 from scipy.stats import norm, binomtest, binom
 
-# -----------------------
-# 常量与辅助函数
-# -----------------------
 door_keys = ["Left", "Up", "Right", "Down"]
 direction_keys = ["Left", "Up-Left", "Up", "Up-Right", "Right", "Down-Right", "Down", "Down-Left"]
 
@@ -24,9 +21,6 @@ def sort_key(exp_id):
     else:
         return (float("inf"), exp_id)
 
-# -----------------------
-# 绘图相关（保持原有功能）
-# -----------------------
 def angle_cw(dx, dy):
     ang = degrees(atan2(dy, dx))
     return -ang
@@ -70,7 +64,6 @@ def plot_grid(exp_id, probs):
     size = 13
     cx, cy = size // 2, size // 2
     fig, ax = plt.subplots(figsize=(4, 4))
-
     for x in range(size):
         for y in range(size):
             dx, dy = x - cx, y - cy
@@ -81,20 +74,17 @@ def plot_grid(exp_id, probs):
             dir_name = get_direction(ang)
             face = colors[dir_name]
             ax.add_patch(plt.Rectangle((x, y), 1, 1, facecolor=face, edgecolor="black", linewidth=0.5))
-
     ax.set_xlim(0, size)
     ax.set_ylim(0, size)
     ax.set_aspect("equal")
     ax.set_xticks([])
     ax.set_yticks([])
     ax.set_title(exp_id)
-
     for d, (x_off, y_off) in label_pos.items():
         key = f"Dir_{d}"
         val = probs.get(key, None)
         if val is not None:
             ax.text(cx + x_off, cy + y_off, f"{val * 100:.2f}%", fontsize=8, ha="center", va="center", color="black")
-
     buf = io.BytesIO()
     plt.savefig(buf, format="png", bbox_inches="tight")
     plt.close(fig)
@@ -108,7 +98,6 @@ def plot_doors(exp_id, door_probs):
     ax.set_xticks([])
     ax.set_yticks([])
     ax.set_aspect("equal")
-
     positions = {
         "Up": (1,2),
         "Left": (0,1),
@@ -116,7 +105,6 @@ def plot_doors(exp_id, door_probs):
         "Down": (1,0),
         "Center": (1,1)
     }
-
     for key, (x, y) in positions.items():
         if key == "Center":
             ax.add_patch(plt.Rectangle((x, y), 1, 1, facecolor="white", edgecolor="black", linewidth=0.8))
@@ -125,16 +113,12 @@ def plot_doors(exp_id, door_probs):
             ax.add_patch(plt.Rectangle((x, y), 1, 1, facecolor="#f0f0f0", edgecolor="black", linewidth=0.8))
             val = door_probs.get(key, 0.0)
             ax.text(x + 0.5, y + 0.5, f"{val * 100:.2f}%", ha="center", va="center", fontsize=9, color="black")
-
     buf = io.BytesIO()
     plt.savefig(buf, format="png", bbox_inches="tight")
     plt.close(fig)
     buf.seek(0)
     return buf
 
-# -----------------------
-# 统计函数：Wilson 区间与成对显著性比较（组内 Bonferroni）
-# -----------------------
 def get_z(alpha):
     return norm.ppf(1 - alpha/2)
 
@@ -168,11 +152,6 @@ def verify_confidence(N, counts, alpha):
     return results
 
 def pairwise_significant_higher_group(counts, labels_in_group, overall_alpha=0.05):
-    """
-    在 labels_in_group 内做两两单侧比较（A>B），组内使用 Bonferroni 校正。
-    返回每条显著结论的字典列表，包含 p_value、计数、以及条件差值（基于 A/(A+B)）。
-    注意：最终导出时差值将以 N 为分母重新计算并显示。
-    """
     labels = [lab for lab in labels_in_group if lab in counts]
     n = len(labels)
     pairs = []
@@ -182,9 +161,7 @@ def pairwise_significant_higher_group(counts, labels_in_group, overall_alpha=0.0
     m_tests = len(pairs)
     if m_tests == 0:
         return []
-
     alpha_per_test = overall_alpha / m_tests
-
     conclusions = []
     for a, b in pairs:
         A = int(counts.get(a, 0))
@@ -192,51 +169,33 @@ def pairwise_significant_higher_group(counts, labels_in_group, overall_alpha=0.0
         m = A + B
         if m == 0:
             continue
-        # 条件下的观测概率估计（用于检验）
-        p_hat = A / m if m > 0 else 0.0
-
-        # 检验 A > B（单侧）
         res_ab = binomtest(A, n=m, p=0.5, alternative='greater')
         p_ab = res_ab.pvalue
         if p_ab <= alpha_per_test:
-            # A 显著大于 B
             conclusions.append({
                 "conclusion": f"{a}>{b}",
                 "p_value": float(p_ab),
-                "A_count": A,   # A 是结论左边的类
-                "B_count": B,   # B 是结论右边的类
+                "A_count": A,
+                "B_count": B,
                 "diff_conditional": round((A/m) - (B/m), 6)
             })
             continue
-        # 检验 B > A（单侧）
         res_ba = binomtest(B, n=m, p=0.5, alternative='greater')
         p_ba = res_ba.pvalue
         if p_ba <= alpha_per_test:
-            # B 显著大于 A —— 注意这里要交换 A/B 的角色
             conclusions.append({
                 "conclusion": f"{b}>{a}",
                 "p_value": float(p_ba),
-                "A_count": B,   # B 是结论左边的类
-                "B_count": A,   # A 是结论右边的类
+                "A_count": B,
+                "B_count": A,
                 "diff_conditional": round((B/m) - (A/m), 6)
             })
             continue
     return conclusions
 
-# -----------------------
-# 与 df_prob 对应的方向列名列表
-# -----------------------
 dir_cols = [f"Dir_{k.replace('-', '_')}" for k in direction_keys]
 
-# -----------------------
-# 写入“计算公式说明”到 worksheet 的辅助函数（合并为一个大单元格）
-# -----------------------
 def write_formula_block_merged(worksheet, sheet_type, workbook, max_merge_cols=5):
-    """
-    在 worksheet 的开头写入一段多行文本，说明脚本中使用的所有公式与计算步骤。
-    将所有说明合并到一个大单元格（从 (0,0) 到 (start_row-1, max_merge_cols)）。
-    返回写入说明后数据应开始的起始行号（int）。
-    """
     common_lines = [
         "计算说明（本节列出脚本中用于计算与检验的公式与步骤，便于复现）：",
         "",
@@ -285,7 +244,6 @@ def write_formula_block_merged(worksheet, sheet_type, workbook, max_merge_cols=5
         "   - 方差（%^2）使用样本方差（ddof=0），标准差为方差的平方根（%）。",
         ""
     ]
-
     if sheet_type == "ci":
         extra = [
             "本页（置信区间验证）中特别说明：",
@@ -311,342 +269,415 @@ def write_formula_block_merged(worksheet, sheet_type, workbook, max_merge_cols=5
         ]
     else:
         extra = []
-
     lines = common_lines + extra
     text = "\n".join(lines)
-
-    # 合并单元格范围：从 (0,0) 到 (end_row, last_col)
-    start_row = len(lines) + 3  # 说明占用行数 + 2 空行
+    start_row = len(lines) + 3
     end_row = start_row - 1
     last_col = max_merge_cols
-
     merged_fmt = workbook.add_format({'text_wrap': True, 'valign': 'top'})
     worksheet.merge_range(0, 0, end_row, last_col, text, merged_fmt)
     worksheet.set_column(0, last_col, 40)
     for r in range(0, end_row + 1):
         worksheet.set_row(r, 18)
-
     return start_row
 
-# -----------------------
-# 主处理流程：批处理当前目录下所有 .dat 文件
-# -----------------------
-for dat_file in glob.glob("*.dat"):
-    base_name = os.path.splitext(os.path.basename(dat_file))[0]
-    out_file = f"{base_name}.xlsx"
-
-    with open(dat_file, "r", encoding="utf-8") as f:
-        data = json.load(f)
-
-    sorted_ids = sorted(data.keys(), key=sort_key)
-
-    # -------- 第一页：实验数据 --------
-    rows = []
-    for exp_id in sorted_ids:
-        exp = data[exp_id]
-        row = {"ID": exp_id}
+def process_dat_in_current_dir():
+    for dat_file in glob.glob("*.dat"):
+        base_name = os.path.splitext(os.path.basename(dat_file))[0]
+        out_file = f"{base_name}.xlsx"
+        if os.path.exists(out_file):
+            continue
+        with open(dat_file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        sorted_ids = sorted(data.keys(), key=sort_key)
+        rows = []
+        for exp_id in sorted_ids:
+            exp = data[exp_id]
+            row = {"ID": exp_id}
+            for k in door_keys:
+                row[f"Door_{k}"] = exp["Doors"].get(k, 0)
+            row["Total"] = exp.get("Total", 0)
+            for k in direction_keys:
+                row[f"Dir_{k.replace('-', '_')}"] = exp["Directions"].get(k, 0)
+            rows.append(row)
+        df_data = pd.DataFrame(rows)
+        df_prob = df_data.copy()
+        totals = df_data["Total"].replace(0, np.nan)
         for k in door_keys:
-            row[f"Door_{k}"] = exp["Doors"].get(k, 0)
-        row["Total"] = exp.get("Total", 0)
+            df_prob[f"Door_{k}"] = df_data[f"Door_{k}"] / totals
         for k in direction_keys:
-            row[f"Dir_{k.replace('-', '_')}"] = exp["Directions"].get(k, 0)
-        rows.append(row)
-
-    df_data = pd.DataFrame(rows)
-
-    # -------- 第二页：概率统计 --------
-    df_prob = df_data.copy()
-    totals = df_data["Total"].replace(0, np.nan)
-    for k in door_keys:
-        df_prob[f"Door_{k}"] = df_data[f"Door_{k}"] / totals
-    for k in direction_keys:
-        df_prob[f"Dir_{k.replace('-', '_')}"] = df_data[f"Dir_{k.replace('-', '_')}"] / totals
-    df_prob[[f"Door_{k}" for k in door_keys] + dir_cols] = df_prob[[f"Door_{k}" for k in door_keys] + dir_cols].fillna(0)
-
-    # -------- 第三页：均值偏差方差（保持原逻辑） --------
-    df_norm = pd.DataFrame()
-    df_norm["ID"] = df_prob["ID"]
-
-    door_cols = [f"Door_{k}" for k in door_keys]
-    door_probs_nonzero = df_prob[door_cols].replace(0, np.nan)
-    df_norm["Door_mean"] = door_probs_nonzero.mean(axis=1, skipna=True).fillna(0)
-    for k in door_keys:
-        col = f"Door_{k}"
-        df_norm[f"{col}(%)"] = (df_prob[col] - df_norm["Door_mean"]) * 100
-    df_norm["Door_var(%^2)"] = door_probs_nonzero.mul(100).var(axis=1, ddof=0, skipna=True).fillna(0)
-    df_norm["Door_std(%)"] = np.sqrt(df_norm["Door_var(%^2)"])
-
-    dir_straight = [f"Dir_{k.replace('-', '_')}" for k in ["Left","Up","Right","Down"]]
-    dir_straight_nonzero = df_prob[dir_straight].replace(0, np.nan)
-    df_norm["Dir_straight_mean"] = dir_straight_nonzero.mean(axis=1, skipna=True).fillna(0)
-    for col in dir_straight:
-        df_norm[f"{col}(%)"] = (df_prob[col] - df_norm["Dir_straight_mean"]) * 100
-    df_norm["Dir_straight_var(%^2)"] = dir_straight_nonzero.mul(100).var(axis=1, ddof=0, skipna=True).fillna(0)
-    df_norm["Dir_straight_std(%)"] = np.sqrt(df_norm["Dir_straight_var(%^2)"])
-
-    diag_keys = ["Up-Left","Up-Right","Down-Right","Down-Left"]
-    dir_diagonal = [f"Dir_{k.replace('-', '_')}" for k in diag_keys]
-    dir_diagonal_nonzero = df_prob[dir_diagonal].replace(0, np.nan)
-    df_norm["Dir_diagonal_mean"] = dir_diagonal_nonzero.mean(axis=1, skipna=True).fillna(0)
-    for col in dir_diagonal:
-        df_norm[f"{col}(%)"] = (df_prob[col] - df_norm["Dir_diagonal_mean"]) * 100
-    df_norm["Dir_diagonal_var(%^2)"] = dir_diagonal_nonzero.mul(100).var(axis=1, ddof=0, skipna=True).fillna(0)
-    df_norm["Dir_diagonal_std(%)"] = np.sqrt(df_norm["Dir_diagonal_var(%^2)"])
-    df_norm["Dir_combined_std(%)"] = np.sqrt(df_norm["Dir_straight_var(%^2)"] + df_norm["Dir_diagonal_var(%^2)"])
-
-    ordered_cols = (
-        ["ID", "Door_mean"]
-        + [f"Door_{k}(%)" for k in door_keys]
-        + ["Door_var(%^2)", "Door_std(%)",
-        "Dir_straight_mean"]
-        + [f"Dir_{k}(%)" for k in ["Left","Up","Right","Down"]]
-        + ["Dir_straight_var(%^2)", "Dir_straight_std(%)",
-        "Dir_diagonal_mean"]
-        + [f"Dir_{k.replace('-', '_')}(%)" for k in ["Up-Left","Up-Right","Down-Right","Down-Left"]]
-        + ["Dir_diagonal_var(%^2)", "Dir_diagonal_std(%)",
-        "Dir_combined_std(%)"]
-    )
-    ordered_cols = [c for c in ordered_cols if c in df_norm.columns]
-    df_norm = df_norm[ordered_cols]
-
-    # -------- 保存到 Excel 并对统计列变色标注 --------
-    with pd.ExcelWriter(out_file, engine="xlsxwriter") as writer:
-        df_data.to_excel(writer, sheet_name="实验数据", index=False)
-        df_prob.to_excel(writer, sheet_name="概率统计", index=False)
-        df_norm.to_excel(writer, sheet_name="均值偏差(%)方差", index=False)
-
-        workbook = writer.book
-        worksheet_norm = writer.sheets["均值偏差(%)方差"]
-
-        mean_fmt = workbook.add_format({'bg_color': '#FFF2CC'})
-        var_fmt  = workbook.add_format({'bg_color': '#FCE4D6'})
-        std_fmt  = workbook.add_format({'bg_color': '#E2EFDA'})
-
-        highlight_means = [c for c in ["Door_mean", "Dir_straight_mean", "Dir_diagonal_mean"] if c in df_norm.columns]
-        highlight_vars  = [c for c in ["Door_var(%^2)", "Dir_straight_var(%^2)", "Dir_diagonal_var(%^2)"] if c in df_norm.columns]
-        highlight_stds  = [c for c in ["Door_std(%)", "Dir_straight_std(%)", "Dir_diagonal_std(%)", "Dir_combined_std(%)"] if c in df_norm.columns]
-
-        item_diff_fmt = workbook.add_format({'bg_color': '#D9EAF7'})
-        item_diff_cols = [c for c in df_norm.columns if c.endswith("(%)") and c not in highlight_stds]
-
-        for col_name in highlight_means:
-            col_idx = df_norm.columns.get_loc(col_name)
-            worksheet_norm.set_column(col_idx, col_idx, None, mean_fmt)
-        for col_name in highlight_vars:
-            col_idx = df_norm.columns.get_loc(col_name)
-            worksheet_norm.set_column(col_idx, col_idx, None, var_fmt)
-        for col_name in highlight_stds:
-            col_idx = df_norm.columns.get_loc(col_name)
-            worksheet_norm.set_column(col_idx, col_idx, None, std_fmt)
-        for col_name in item_diff_cols:
-            col_idx = df_norm.columns.get_loc(col_name)
-            worksheet_norm.set_column(col_idx, col_idx, None, item_diff_fmt)
-
-        # -------- 门概率图页 --------
-        worksheet_doors = workbook.add_worksheet("门概率图")
-        writer.sheets["门概率图"] = worksheet_doors
-
-        groups = {}
-        for exp_id in sorted_ids:
-            m = re.match(r"(\d+)", exp_id)
-            num = m.group(1) if m else exp_id
-            groups.setdefault(num, []).append(exp_id)
-
-        row_height_unit = 10
-        col_width_unit = 3
-
-        group_index = 0
-        for num, exp_ids in groups.items():
-            r = group_index * row_height_unit
-            for j, exp_id in enumerate(exp_ids):
-                row = df_prob.loc[df_prob["ID"] == exp_id]
-                door_probs = {}
-                for k in door_keys:
-                    col = f"Door_{k}"
-                    door_probs[k] = (row.iloc[0][col] if not row.empty and col in row.columns else 0.0)
-                door_probs_for_plot = {
-                    "Left": door_probs["Left"],
-                    "Up": door_probs["Up"],
-                    "Right": door_probs["Right"],
-                    "Down": door_probs["Down"]
-                }
-                buf = plot_doors(exp_id, door_probs_for_plot)
-                c = j * col_width_unit
-                worksheet_doors.insert_image(r, c, f"{exp_id}_doors.png", {"image_data": buf})
-            group_index += 1
-
-        # -------- 方向图页 --------
-        worksheet_dirs = workbook.add_worksheet("方向图")
-        writer.sheets["方向图"] = worksheet_dirs
-
-        groups = {}
-        for exp_id in sorted_ids:
-            m = re.match(r"(\d+)", exp_id)
-            num = m.group(1) if m else exp_id
-            groups.setdefault(num, []).append(exp_id)
-
-        row_offset = 0
-        for num, exp_ids in groups.items():
-            col_offset = 0
-            for exp_id in exp_ids:
-                row = df_prob.loc[df_prob["ID"] == exp_id]
-                probs = {}
-                for col in dir_cols:
-                    probs[col] = (row.iloc[0][col] if not row.empty and col in row.columns else 0.0)
-                buf = plot_grid(exp_id, probs)
-                worksheet_dirs.insert_image(row_offset, col_offset, exp_id + ".png", {"image_data": buf})
-                col_offset += 5
-            row_offset += 18
-
-        # -------- 置信区间验证页（在开头合并单元格写入公式说明） --------
-        worksheet_ci = workbook.add_worksheet("置信区间验证")
-        writer.sheets["置信区间验证"] = worksheet_ci
-
-        start_row_ci = write_formula_block_merged(worksheet_ci, sheet_type="ci", workbook=workbook, max_merge_cols=5)
-
-        header_fmt = workbook.add_format({'bold': True, 'bg_color': '#DCE6F1'})
-        small_col_width = 12
-        worksheet_ci.set_column(0, 0, 18)
-        worksheet_ci.set_column(1, 1, small_col_width)
-        worksheet_ci.set_column(2, 6, 14)
-
-        row_offset = start_row_ci
-        for exp_id in sorted_ids:
-            exp = data[exp_id]
-            N = exp.get("Total", 0)
-
-            alpha_doors = 0.05 / 4
-            door_counts = {k: exp["Doors"].get(k, 0) for k in door_keys}
-            door_results = verify_confidence(N, door_counts, alpha_doors)
-
-            worksheet_ci.write(row_offset, 0, f"实验 {exp_id} - Doors", header_fmt)
-            row_offset += 1
-            headers = ["类别","频数","估计概率","下界","上界","误差幅度","≤1%"]
-            worksheet_ci.write_row(row_offset, 0, headers, header_fmt)
-            row_offset += 1
-            for r in door_results:
-                worksheet_ci.write_row(row_offset, 0, [r[h] for h in headers])
+            df_prob[f"Dir_{k.replace('-', '_')}"] = df_data[f"Dir_{k.replace('-', '_')}"] / totals
+        df_prob[[f"Door_{k}" for k in door_keys] + dir_cols] = df_prob[[f"Door_{k}" for k in door_keys] + dir_cols].fillna(0)
+        df_norm = pd.DataFrame()
+        df_norm["ID"] = df_prob["ID"]
+        door_cols = [f"Door_{k}" for k in door_keys]
+        door_probs_nonzero = df_prob[door_cols].replace(0, np.nan)
+        df_norm["Door_mean"] = door_probs_nonzero.mean(axis=1, skipna=True).fillna(0)
+        for k in door_keys:
+            col = f"Door_{k}"
+            df_norm[f"{col}(%)"] = (df_prob[col] - df_norm["Door_mean"]) * 100
+        df_norm["Door_var(%^2)"] = door_probs_nonzero.mul(100).var(axis=1, ddof=0, skipna=True).fillna(0)
+        df_norm["Door_std(%)"] = np.sqrt(df_norm["Door_var(%^2)"])
+        dir_straight = [f"Dir_{k.replace('-', '_')}" for k in ["Left","Up","Right","Down"]]
+        dir_straight_nonzero = df_prob[dir_straight].replace(0, np.nan)
+        df_norm["Dir_straight_mean"] = dir_straight_nonzero.mean(axis=1, skipna=True).fillna(0)
+        for col in dir_straight:
+            df_norm[f"{col}(%)"] = (df_prob[col] - df_norm["Dir_straight_mean"]) * 100
+        df_norm["Dir_straight_var(%^2)"] = dir_straight_nonzero.mul(100).var(axis=1, ddof=0, skipna=True).fillna(0)
+        df_norm["Dir_straight_std(%)"] = np.sqrt(df_norm["Dir_straight_var(%^2)"])
+        diag_keys = ["Up-Left","Up-Right","Down-Right","Down-Left"]
+        dir_diagonal = [f"Dir_{k.replace('-', '_')}" for k in diag_keys]
+        dir_diagonal_nonzero = df_prob[dir_diagonal].replace(0, np.nan)
+        df_norm["Dir_diagonal_mean"] = dir_diagonal_nonzero.mean(axis=1, skipna=True).fillna(0)
+        for col in dir_diagonal:
+            df_norm[f"{col}(%)"] = (df_prob[col] - df_norm["Dir_diagonal_mean"]) * 100
+        df_norm["Dir_diagonal_var(%^2)"] = dir_diagonal_nonzero.mul(100).var(axis=1, ddof=0, skipna=True).fillna(0)
+        df_norm["Dir_diagonal_std(%)"] = np.sqrt(df_norm["Dir_diagonal_var(%^2)"])
+        df_norm["Dir_combined_std(%)"] = np.sqrt(df_norm["Dir_straight_var(%^2)"] + df_norm["Dir_diagonal_var(%^2)"])
+        ordered_cols = (
+            ["ID", "Door_mean"]
+            + [f"Door_{k}(%)" for k in door_keys]
+            + ["Door_var(%^2)", "Door_std(%)",
+            "Dir_straight_mean"]
+            + [f"Dir_{k}(%)" for k in ["Left","Up","Right","Down"]]
+            + ["Dir_straight_var(%^2)", "Dir_straight_std(%)",
+            "Dir_diagonal_mean"]
+            + [f"Dir_{k.replace('-', '_')}(%)" for k in ["Up-Left","Up-Right","Down-Right","Down-Left"]]
+            + ["Dir_diagonal_var(%^2)", "Dir_diagonal_std(%)",
+            "Dir_combined_std(%)"]
+        )
+        ordered_cols = [c for c in ordered_cols if c in df_norm.columns]
+        df_norm = df_norm[ordered_cols]
+        with pd.ExcelWriter(out_file, engine="xlsxwriter") as writer:
+            df_data.to_excel(writer, sheet_name="实验数据", index=False)
+            df_prob.to_excel(writer, sheet_name="概率统计", index=False)
+            df_norm.to_excel(writer, sheet_name="均值偏差(%)方差", index=False)
+            workbook = writer.book
+            worksheet_norm = writer.sheets["均值偏差(%)方差"]
+            mean_fmt = workbook.add_format({'bg_color': '#FFF2CC'})
+            var_fmt  = workbook.add_format({'bg_color': '#FCE4D6'})
+            std_fmt  = workbook.add_format({'bg_color': '#E2EFDA'})
+            highlight_means = [c for c in ["Door_mean", "Dir_straight_mean", "Dir_diagonal_mean"] if c in df_norm.columns]
+            highlight_vars  = [c for c in ["Door_var(%^2)", "Dir_straight_var(%^2)", "Dir_diagonal_var(%^2)"] if c in df_norm.columns]
+            highlight_stds  = [c for c in ["Door_std(%)", "Dir_straight_std(%)", "Dir_diagonal_std(%)", "Dir_combined_std(%)"] if c in df_norm.columns]
+            item_diff_fmt = workbook.add_format({'bg_color': '#D9EAF7'})
+            item_diff_cols = [c for c in df_norm.columns if c.endswith("(%)") and c not in highlight_stds]
+            for col_name in highlight_means:
+                col_idx = df_norm.columns.get_loc(col_name)
+                worksheet_norm.set_column(col_idx, col_idx, None, mean_fmt)
+            for col_name in highlight_vars:
+                col_idx = df_norm.columns.get_loc(col_name)
+                worksheet_norm.set_column(col_idx, col_idx, None, var_fmt)
+            for col_name in highlight_stds:
+                col_idx = df_norm.columns.get_loc(col_name)
+                worksheet_norm.set_column(col_idx, col_idx, None, std_fmt)
+            for col_name in item_diff_cols:
+                col_idx = df_norm.columns.get_loc(col_name)
+                worksheet_norm.set_column(col_idx, col_idx, None, item_diff_fmt)
+            worksheet_doors = workbook.add_worksheet("门概率图")
+            writer.sheets["门概率图"] = worksheet_doors
+            groups = {}
+            for exp_id in sorted_ids:
+                m = re.match(r"(\d+)", exp_id)
+                num = m.group(1) if m else exp_id
+                groups.setdefault(num, []).append(exp_id)
+            row_height_unit = 10
+            col_width_unit = 3
+            group_index = 0
+            for num, exp_ids in groups.items():
+                r = group_index * row_height_unit
+                for j, exp_id in enumerate(exp_ids):
+                    row = df_prob.loc[df_prob["ID"] == exp_id]
+                    door_probs = {}
+                    for k in door_keys:
+                        col = f"Door_{k}"
+                        door_probs[k] = (row.iloc[0][col] if not row.empty and col in row.columns else 0.0)
+                    door_probs_for_plot = {
+                        "Left": door_probs["Left"],
+                        "Up": door_probs["Up"],
+                        "Right": door_probs["Right"],
+                        "Down": door_probs["Down"]
+                    }
+                    buf = plot_doors(exp_id, door_probs_for_plot)
+                    c = j * col_width_unit
+                    worksheet_doors.insert_image(r, c, f"{exp_id}_doors.png", {"image_data": buf})
+                group_index += 1
+            worksheet_dirs = workbook.add_worksheet("方向图")
+            writer.sheets["方向图"] = worksheet_dirs
+            groups = {}
+            for exp_id in sorted_ids:
+                m = re.match(r"(\d+)", exp_id)
+                num = m.group(1) if m else exp_id
+                groups.setdefault(num, []).append(exp_id)
+            row_offset = 0
+            for num, exp_ids in groups.items():
+                col_offset = 0
+                for exp_id in exp_ids:
+                    row = df_prob.loc[df_prob["ID"] == exp_id]
+                    probs = {}
+                    for col in dir_cols:
+                        probs[col] = (row.iloc[0][col] if not row.empty and col in row.columns else 0.0)
+                    buf = plot_grid(exp_id, probs)
+                    worksheet_dirs.insert_image(row_offset, col_offset, exp_id + ".png", {"image_data": buf})
+                    col_offset += 5
+                row_offset += 18
+            worksheet_ci = workbook.add_worksheet("置信区间验证")
+            writer.sheets["置信区间验证"] = worksheet_ci
+            start_row_ci = write_formula_block_merged(worksheet_ci, sheet_type="ci", workbook=workbook, max_merge_cols=5)
+            header_fmt = workbook.add_format({'bold': True, 'bg_color': '#DCE6F1'})
+            small_col_width = 12
+            worksheet_ci.set_column(0, 0, 18)
+            worksheet_ci.set_column(1, 1, small_col_width)
+            worksheet_ci.set_column(2, 6, 14)
+            row_offset = start_row_ci
+            for exp_id in sorted_ids:
+                exp = data[exp_id]
+                N = exp.get("Total", 0)
+                alpha_doors = 0.05 / 4
+                door_counts = {k: exp["Doors"].get(k, 0) for k in door_keys}
+                door_results = verify_confidence(N, door_counts, alpha_doors)
+                worksheet_ci.write(row_offset, 0, f"实验 {exp_id} - Doors", header_fmt)
                 row_offset += 1
-
-            row_offset += 1
-
-            alpha_dirs = 0.05 / 8
-            dir_counts = {k: exp["Directions"].get(k, 0) for k in direction_keys}
-            dir_results = verify_confidence(N, dir_counts, alpha_dirs)
-
-            worksheet_ci.write(row_offset, 0, f"实验 {exp_id} - Directions", header_fmt)
-            row_offset += 1
-            worksheet_ci.write_row(row_offset, 0, headers, header_fmt)
-            row_offset += 1
-            for r in dir_results:
-                worksheet_ci.write_row(row_offset, 0, [r[h] for h in headers])
+                headers = ["类别","频数","估计概率","下界","上界","误差幅度","≤1%"]
+                worksheet_ci.write_row(row_offset, 0, headers, header_fmt)
                 row_offset += 1
+                for r in door_results:
+                    worksheet_ci.write_row(row_offset, 0, [r[h] for h in headers])
+                    row_offset += 1
+                row_offset += 1
+                alpha_dirs = 0.05 / 8
+                dir_counts = {k: exp["Directions"].get(k, 0) for k in direction_keys}
+                dir_results = verify_confidence(N, dir_counts, alpha_dirs)
+                worksheet_ci.write(row_offset, 0, f"实验 {exp_id} - Directions", header_fmt)
+                row_offset += 1
+                worksheet_ci.write_row(row_offset, 0, headers, header_fmt)
+                row_offset += 1
+                for r in dir_results:
+                    worksheet_ci.write_row(row_offset, 0, [r[h] for h in headers])
+                    row_offset += 1
+                row_offset += 2
+            worksheet_summary_doors = workbook.add_worksheet("结论-门")
+            writer.sheets["结论-门"] = worksheet_summary_doors
+            worksheet_summary_dirs = workbook.add_worksheet("结论-方向")
+            writer.sheets["结论-方向"] = worksheet_summary_dirs
+            start_row_doors = write_formula_block_merged(worksheet_summary_doors, sheet_type="doors_summary", workbook=workbook, max_merge_cols=5)
+            start_row_dirs = write_formula_block_merged(worksheet_summary_dirs, sheet_type="dirs_summary", workbook=workbook, max_merge_cols=5)
+            header_row = ["实验编号", "结论", "p_value", "A_count", "B_count", "差值(pA-pB, N分母)"]
+            worksheet_summary_doors.set_column(0, 0, 14)
+            worksheet_summary_doors.set_column(1, 1, 18)
+            worksheet_summary_doors.set_column(2, 5, 12)
+            worksheet_summary_dirs.set_column(0, 0, 14)
+            worksheet_summary_dirs.set_column(1, 1, 18)
+            worksheet_summary_dirs.set_column(2, 5, 12)
+            worksheet_summary_doors.write_row(start_row_doors, 0, header_row, header_fmt)
+            worksheet_summary_dirs.write_row(start_row_dirs, 0, header_row, header_fmt)
+            row_d = start_row_doors + 1
+            row_dir = start_row_dirs + 1
+            for exp_id in sorted_ids:
+                exp = data[exp_id]
+                N = exp.get("Total", 0)
+                door_counts = {k: exp["Doors"].get(k, 0) for k in door_keys}
+                door_conclusions = pairwise_significant_higher_group(door_counts, door_keys, overall_alpha=0.05)
+                for item in door_conclusions:
+                    A = item["A_count"]
+                    B = item["B_count"]
+                    diff_total = (A / N - B / N) if N > 0 else 0.0
+                    worksheet_summary_doors.write_row(row_d, 0, [
+                        exp_id,
+                        item["conclusion"],
+                        item["p_value"],
+                        item["A_count"],
+                        item["B_count"],
+                        round(diff_total, 6)
+                    ])
+                    row_d += 1
+                dir_counts = {k: exp["Directions"].get(k, 0) for k in direction_keys}
+                straight_labels = ["Left", "Up", "Right", "Down"]
+                straight_conclusions = pairwise_significant_higher_group(dir_counts, straight_labels, overall_alpha=0.05)
+                for item in straight_conclusions:
+                    A = item["A_count"]
+                    B = item["B_count"]
+                    diff_total = (A / N - B / N) if N > 0 else 0.0
+                    worksheet_summary_dirs.write_row(row_dir, 0, [
+                        exp_id,
+                        item["conclusion"],
+                        item["p_value"],
+                        item["A_count"],
+                        item["B_count"],
+                        round(diff_total, 6)
+                    ])
+                    row_dir += 1
+                diagonal_labels = ["Up-Left", "Up-Right", "Down-Right", "Down-Left"]
+                diagonal_conclusions = pairwise_significant_higher_group(dir_counts, diagonal_labels, overall_alpha=0.05)
+                for item in diagonal_conclusions:
+                    A = item["A_count"]
+                    B = item["B_count"]
+                    diff_total = (A / N - B / N) if N > 0 else 0.0
+                    worksheet_summary_dirs.write_row(row_dir, 0, [
+                        exp_id,
+                        item["conclusion"],
+                        item["p_value"],
+                        item["A_count"],
+                        item["B_count"],
+                        round(diff_total, 6)
+                    ])
+                    row_dir += 1
+            fmt_gray = workbook.add_format({'bg_color': '#D9D9D9'})
+            fmt_yellow = workbook.add_format({'bg_color': '#FFD966'})
+            fmt_green = workbook.add_format({'bg_color': '#A9D08E'})
+            diff_col_idx = 5
+            row_d_end = row_d - 1
+            if row_d_end >= start_row_doors + 1:
+                worksheet_summary_doors.conditional_format(start_row_doors + 1, diff_col_idx, row_d_end, diff_col_idx,
+                    {'type': 'cell', 'criteria': '<', 'value': 0.01, 'format': fmt_gray})
+                worksheet_summary_doors.conditional_format(start_row_doors + 1, diff_col_idx, row_d_end, diff_col_idx,
+                    {'type': 'cell', 'criteria': 'between', 'minimum': 0.01, 'maximum': 0.02, 'format': fmt_yellow})
+                worksheet_summary_doors.conditional_format(start_row_doors + 1, diff_col_idx, row_d_end, diff_col_idx,
+                    {'type': 'cell', 'criteria': '>=', 'value': 0.02, 'format': fmt_green})
+            row_dir_end = row_dir - 1
+            if row_dir_end >= start_row_dirs + 1:
+                worksheet_summary_dirs.conditional_format(start_row_dirs + 1, diff_col_idx, row_dir_end, diff_col_idx,
+                    {'type': 'cell', 'criteria': '<', 'value': 0.01, 'format': fmt_gray})
+                worksheet_summary_dirs.conditional_format(start_row_dirs + 1, diff_col_idx, row_dir_end, diff_col_idx,
+                    {'type': 'cell', 'criteria': 'between', 'minimum': 0.01, 'maximum': 0.02, 'format': fmt_yellow})
+                worksheet_summary_dirs.conditional_format(start_row_dirs + 1, diff_col_idx, row_dir_end, diff_col_idx,
+                    {'type': 'cell', 'criteria': '>=', 'value': 0.02, 'format': fmt_green})
+        print(f"{out_file} 已生成.")
 
-            row_offset += 2
+BD_GROUPS = ["BD", "BDXL", "BDKp", "BDXLKp"]
+BDI_GROUPS = ["BDI", "BDIXL", "BDIKp", "BDIXLKp"]
+N_VALUES = [1,2,3,4,5,6,7]
 
-        # -------- 结论页（门与方向），在开头合并单元格写入公式说明，然后每条结论一行 --------
-        worksheet_summary_doors = workbook.add_worksheet("结论-门")
-        writer.sheets["结论-门"] = worksheet_summary_doors
-        worksheet_summary_dirs = workbook.add_worksheet("结论-方向")
-        writer.sheets["结论-方向"] = worksheet_summary_dirs
+def extract_version_from_name(name):
+    m = re.search(r"(\d+\.\d+)w", name)
+    if not m:
+        return None
+    try:
+        return float(m.group(1))
+    except:
+        return None
 
-        start_row_doors = write_formula_block_merged(worksheet_summary_doors, sheet_type="doors_summary", workbook=workbook, max_merge_cols=5)
-        start_row_dirs = write_formula_block_merged(worksheet_summary_dirs, sheet_type="dirs_summary", workbook=workbook, max_merge_cols=5)
+def generate_statistics_md(base_dir):
+    base_dir = os.path.abspath(base_dir)
+    group_files = {g: [] for g in BD_GROUPS + BDI_GROUPS}
+    bdi_detail = {g: {n: [] for n in N_VALUES} for g in BDI_GROUPS}
+    for root, dirs, files in os.walk(base_dir):
+        for f in files:
+            if not f.lower().endswith(".dat"):
+                continue
+            full = os.path.join(root, f)
+            rel = os.path.relpath(full, base_dir)
+            parts = rel.split(os.sep)
+            if len(parts) < 2:
+                continue
+            group = parts[0]
+            if group not in group_files:
+                continue
+            group_files[group].append(full)
+            if group in BDI_GROUPS and len(parts) >= 2:
+                sub = parts[1]
+                if sub.isdigit():
+                    n = int(sub)
+                    if n in N_VALUES:
+                        bdi_detail[group][n].append(full)
+    lines = []
+    lines.append("| # | layers | rep(w) | rep+(w) |")
+    lines.append("|:--:|:--:|:--:|:--:|")
+    for g in BD_GROUPS:
+        files = group_files.get(g, [])
+        layers = len(files) if files else ""
+        rep_versions = []
+        rplus_versions = []
+        for full in files:
+            name = os.path.basename(full)
+            v = extract_version_from_name(name)
+            if v is None:
+                continue
+            lower = name.lower()
+            if "rep" in lower and "r+" not in lower:
+                rep_versions.append(v)
+            if "r+" in lower:
+                rplus_versions.append(v)
+        def summarize(lst):
+            if not lst:
+                return ""
+            vals, counts = np.unique(np.array(lst), return_counts=True)
+            mode = vals[np.argmax(counts)]
+            return f"{mode:.2f}"
+        rep_v = summarize(rep_versions)
+        rplus_v = summarize(rplus_versions)
+        lines.append(f"| {g} | {layers} | {rep_v} | {rplus_v} |")
+    lines.append("")
+    lines.append("| # | layers | N | c589 | c599 | t102 |rep(w) | rep+(w) |")
+    lines.append("|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|")
+    for g in BDI_GROUPS:
+        files_all = group_files.get(g, [])
+        layers = len(files_all) if files_all else ""
+        first_row = True
+        for n in N_VALUES:
+            files_n = bdi_detail[g][n]
+            def has_tag(tag):
+                return any(tag.lower() in os.path.basename(f).lower() for f in files_n)
+            c589 = 1 if has_tag("c589") else 0
+            c599 = 1 if has_tag("c599") else 0
+            t102 = 1 if has_tag("t102") else 0
+            rep_versions = []
+            rplus_versions = []
+            for full in files_n:
+                name = os.path.basename(full)
+                v = extract_version_from_name(name)
+                if v is None:
+                    continue
+                lower = name.lower()
+                if "rep" in lower and "r+" not in lower:
+                    rep_versions.append(v)
+                if "r+" in lower:
+                    rplus_versions.append(v)
+            def summarize(lst):
+                if not lst:
+                    return ""
+                vals, counts = np.unique(np.array(lst), return_counts=True)
+                mode = vals[np.argmax(counts)]
+                return f"{mode:.2f}"
+            rep_v = summarize(rep_versions)
+            rplus_v = summarize(rplus_versions)
+            g_cell = g if first_row else ""
+            layers_cell = layers if first_row else ""
+            lines.append(
+                f"| {g_cell} | {layers_cell} | {n} | {c589} | {c599} | {t102} | {rep_v} | {rplus_v} |"
+            )
+            first_row = False
+    md_path = os.path.join(base_dir, "statistics.md")
+    with open(md_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines) + "\n")
+    print("statistics.md 已生成:", md_path)
+    return md_path
 
-        header_row = ["实验编号", "结论", "p_value", "A_count", "B_count", "差值(pA-pB, N分母)"]
-        worksheet_summary_doors.set_column(0, 0, 14)
-        worksheet_summary_doors.set_column(1, 1, 18)
-        worksheet_summary_doors.set_column(2, 5, 12)
-        worksheet_summary_dirs.set_column(0, 0, 14)
-        worksheet_summary_dirs.set_column(1, 1, 18)
-        worksheet_summary_dirs.set_column(2, 5, 12)
+def process_all_dat_files(base_dir):
+    base_dir = os.path.abspath(base_dir)
+    created = []
+    skipped = []
+    for root, dirs, files in os.walk(base_dir):
+        if not any(f.lower().endswith(".dat") for f in files):
+            continue
+        cwd = os.getcwd()
+        try:
+            os.chdir(root)
+            before = set(glob.glob("*.xlsx"))
+            process_dat_in_current_dir()
+            after = set(glob.glob("*.xlsx"))
+            new_files = after - before
+            for x in new_files:
+                created.append(os.path.join(root, x))
+            for x in before:
+                skipped.append(os.path.join(root, x))
+        finally:
+            os.chdir(cwd)
+    md_path = generate_statistics_md(base_dir)
+    return {"created": created, "skipped": skipped, "statistics_md": md_path}
 
-        worksheet_summary_doors.write_row(start_row_doors, 0, header_row, header_fmt)
-        worksheet_summary_dirs.write_row(start_row_dirs, 0, header_row, header_fmt)
-
-        row_d = start_row_doors + 1
-        row_dir = start_row_dirs + 1
-        for exp_id in sorted_ids:
-            exp = data[exp_id]
-            N = exp.get("Total", 0)
-
-            # ---- 门组比较（组内 Bonferroni） ----
-            door_counts = {k: exp["Doors"].get(k, 0) for k in door_keys}
-            door_conclusions = pairwise_significant_higher_group(door_counts, door_keys, overall_alpha=0.05)
-            for item in door_conclusions:
-                A = item["A_count"]
-                B = item["B_count"]
-                diff_total = (A / N - B / N) if N > 0 else 0.0
-                worksheet_summary_doors.write_row(row_d, 0, [
-                    exp_id,
-                    item["conclusion"],
-                    item["p_value"],
-                    item["A_count"],
-                    item["B_count"],
-                    round(diff_total, 6)
-                ])
-                row_d += 1
-
-            # ---- 方向组比较：直角组与斜角组分别比较 ----
-            dir_counts = {k: exp["Directions"].get(k, 0) for k in direction_keys}
-
-            straight_labels = ["Left", "Up", "Right", "Down"]
-            straight_conclusions = pairwise_significant_higher_group(dir_counts, straight_labels, overall_alpha=0.05)
-            for item in straight_conclusions:
-                A = item["A_count"]
-                B = item["B_count"]
-                diff_total = (A / N - B / N) if N > 0 else 0.0
-                worksheet_summary_dirs.write_row(row_dir, 0, [
-                    exp_id,
-                    item["conclusion"],
-                    item["p_value"],
-                    item["A_count"],
-                    item["B_count"],
-                    round(diff_total, 6)
-                ])
-                row_dir += 1
-
-            diagonal_labels = ["Up-Left", "Up-Right", "Down-Right", "Down-Left"]
-            diagonal_conclusions = pairwise_significant_higher_group(dir_counts, diagonal_labels, overall_alpha=0.05)
-            for item in diagonal_conclusions:
-                A = item["A_count"]
-                B = item["B_count"]
-                diff_total = (A / N - B / N) if N > 0 else 0.0
-                worksheet_summary_dirs.write_row(row_dir, 0, [
-                    exp_id,
-                    item["conclusion"],
-                    item["p_value"],
-                    item["A_count"],
-                    item["B_count"],
-                    round(diff_total, 6)
-                ])
-                row_dir += 1
-
-        # -------- 条件格式：差值着色（灰/黄/绿） --------
-        fmt_gray = workbook.add_format({'bg_color': '#D9D9D9'})
-        fmt_yellow = workbook.add_format({'bg_color': '#FFD966'})
-        fmt_green = workbook.add_format({'bg_color': '#A9D08E'})
-
-        diff_col_idx = 5  # 差值列在第 6 列（0-based index）
-
-        # doors sheet conditional formatting
-        row_d_end = row_d - 1
-        if row_d_end >= start_row_doors + 1:
-            worksheet_summary_doors.conditional_format(start_row_doors + 1, diff_col_idx, row_d_end, diff_col_idx,
-                {'type': 'cell', 'criteria': '<', 'value': 0.01, 'format': fmt_gray})
-            worksheet_summary_doors.conditional_format(start_row_doors + 1, diff_col_idx, row_d_end, diff_col_idx,
-                {'type': 'cell', 'criteria': 'between', 'minimum': 0.01, 'maximum': 0.02, 'format': fmt_yellow})
-            worksheet_summary_doors.conditional_format(start_row_doors + 1, diff_col_idx, row_d_end, diff_col_idx,
-                {'type': 'cell', 'criteria': '>=', 'value': 0.02, 'format': fmt_green})
-
-        # dirs sheet conditional formatting
-        row_dir_end = row_dir - 1
-        if row_dir_end >= start_row_dirs + 1:
-            worksheet_summary_dirs.conditional_format(start_row_dirs + 1, diff_col_idx, row_dir_end, diff_col_idx,
-                {'type': 'cell', 'criteria': '<', 'value': 0.01, 'format': fmt_gray})
-            worksheet_summary_dirs.conditional_format(start_row_dirs + 1, diff_col_idx, row_dir_end, diff_col_idx,
-                {'type': 'cell', 'criteria': 'between', 'minimum': 0.01, 'maximum': 0.02, 'format': fmt_yellow})
-            worksheet_summary_dirs.conditional_format(start_row_dirs + 1, diff_col_idx, row_dir_end, diff_col_idx,
-                {'type': 'cell', 'criteria': '>=', 'value': 0.02, 'format': fmt_green})
-
-    print(f"{out_file} 已生成.")
+if __name__ == "__main__":
+    res = process_all_dat_files(os.getcwd())
+    print("created:", len(res["created"]))
+    print("skipped:", len(res["skipped"]))
+    print("statistics_md:", res["statistics_md"])
