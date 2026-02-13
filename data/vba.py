@@ -31,7 +31,9 @@ def run_bd_for_missing_xlsx():
     return res
 
 if __name__ == "__main__":
+    # 先生成缺失的 xlsx（如果需要）
     run_bd_for_missing_xlsx()
+
     vba_code = f"""
 Sub BatchSaveAsHTMLRecursive()
     Dim fso As Object
@@ -39,16 +41,20 @@ Sub BatchSaveAsHTMLRecursive()
     Dim dict As Object
     Dim indexPath As String
     Dim f As Integer
-    
+
+    ' 关闭 Excel 弹窗与屏幕更新，避免提示框
+    Application.DisplayAlerts = False
+    Application.ScreenUpdating = False
+
     Dim rootPath As String
     rootPath = "{path.TARGET_PATH}"
-    
+
     Set fso = CreateObject("Scripting.FileSystemObject")
     Set folder = fso.GetFolder(rootPath)
     Set dict = CreateObject("Scripting.Dictionary")
-    
+
     ProcessFolder folder, rootPath, dict
-    
+
     indexPath = rootPath & "\\index.html"
     f = FreeFile
     Open indexPath For Output As #f
@@ -56,7 +62,7 @@ Sub BatchSaveAsHTMLRecursive()
     Print #f, "<h1>Excel 2 HTML</h1>"
     Print #f, ParseMarkdownTables(rootPath & "\\statistics.md")
     Print #f, "<hr/>"
-    
+
     Dim key As Variant
     For Each key In dict.Keys
         Print #f, "<h2>" & key & "</h2><ul>"
@@ -68,11 +74,70 @@ Sub BatchSaveAsHTMLRecursive()
         Next
         Print #f, "</ul>"
     Next
-    
+
+    ' --- 先把 summary 下的 summary xlsx 转为 html（若 html 不存在则生成） ---
+    Dim summaryFiles(3) As String
+    summaryFiles(0) = "summary\\BD_summary.xlsx"
+    summaryFiles(1) = "summary\\BDXL_summary.xlsx"
+    summaryFiles(2) = "summary\\BDKp_summary.xlsx"
+    summaryFiles(3) = "summary\\BDXLKp_summary.xlsx"
+
+    Dim j As Integer
+    For j = 0 To UBound(summaryFiles)
+        Dim sXlsxRel As String
+        Dim sXlsxFull As String
+        Dim sHtmlFull As String
+        Dim sHtmlRel As String
+
+        sXlsxRel = summaryFiles(j)
+        sXlsxFull = rootPath & "\\" & sXlsxRel
+        sHtmlRel = Replace(sXlsxRel, ".xlsx", ".html")
+        sHtmlFull = rootPath & "\\" & sHtmlRel
+
+        If fso.FileExists(sXlsxFull) Then
+            ' 如果 html 不存在，则打开 xlsx 并另存为 html
+            If Not fso.FileExists(sHtmlFull) Then
+                On Error Resume Next
+                Dim wbSum As Workbook
+                Set wbSum = Workbooks.Open(sXlsxFull)
+                If Not wbSum Is Nothing Then
+                    wbSum.SaveAs sHtmlFull, FileFormat:=44
+                    wbSum.Close SaveChanges:=False
+                    Call FixEncoding(sHtmlFull)
+                End If
+                On Error GoTo 0
+            End If
+        End If
+    Next
+
+    ' --- 在 index.html 末尾加入“有效结论”区块，链接指向 summary/*.html（仅存在时显示） ---
+    Print #f, "<hr/>"
+    Print #f, "<h1>Conclusions</h1>"
+    Print #f, "<ul>"
+
+    For j = 0 To UBound(summaryFiles)
+        Dim htmlRel As String
+        Dim htmlFull As String
+        htmlRel = Replace(summaryFiles(j), ".xlsx", ".html")
+        htmlFull = rootPath & "\\" & Replace(htmlRel, "/", "\\")
+        If fso.FileExists(htmlFull) Then
+            Dim hrefPath As String
+            hrefPath = Replace(htmlRel, "\\", "/")  ' 浏览器友好路径
+            Dim displayName As String
+            displayName = Mid(htmlRel, Len("summary/") + 1) ' 去掉 summary/ 前缀（用于显示）
+            Print #f, "<li><a href='" & hrefPath & "' target='_blank'>" & displayName & "</a></li>"
+        End If
+    Next
+
+    Print #f, "</ul>"
+    ' --- 有效结论区块结束 ---
+
     Print #f, "</body></html>"
     Close #f
-    
-    MsgBox "批量转换完成！索引文件已生成: " & indexPath
+
+    ' 恢复屏幕更新与提示（可选）
+    Application.ScreenUpdating = True
+    Application.DisplayAlerts = True
 End Sub
 
 Sub ProcessFolder(f As Object, rootPath As String, dict As Object)
@@ -84,12 +149,23 @@ Sub ProcessFolder(f As Object, rootPath As String, dict As Object)
     Dim files() As String
     Dim count As Integer
     Dim htmlPath As String
-    
+
     folderName = Replace(f.Path, rootPath & "\\", "")
     If folderName = "" Then folderName = "(根目录)"
-    
+
+    ' --- 新增：跳过 summary 目录（不处理 summary 及其子目录） ---
+    Dim lowPath As String
+    lowPath = LCase(f.Path)
+    If InStr(lowPath, "\\summary") > 0 Or InStr(lowPath, "/summary") > 0 Then
+        Exit Sub
+    End If
+    If LCase(folderName) = "summary" Then
+        Exit Sub
+    End If
+    ' --- 新增结束 ---
+
     count = 0
-    
+
     For Each file In f.Files
         If LCase(Right(file.Name, 5)) = ".xlsx" Then
             If Left(file.Name, 2) <> "~$" Then
@@ -109,11 +185,11 @@ Sub ProcessFolder(f As Object, rootPath As String, dict As Object)
             End If
         End If
     Next
-    
+
     If count > 0 Then
         dict(folderName) = files
     End If
-    
+
     For Each subFolder In f.SubFolders
         ProcessFolder subFolder, rootPath, dict
     Next
@@ -149,17 +225,17 @@ Function ParseMarkdownTables(mdPath As String) As String
     Dim line As String
     Dim html As String
     Dim inTable As Boolean
-    
+
     Set fso = CreateObject("Scripting.FileSystemObject")
     If Not fso.FileExists(mdPath) Then
         ParseMarkdownTables = "<p>(statistics.md 文件不存在)</p>"
         Exit Function
     End If
-    
+
     Set ts = fso.OpenTextFile(mdPath, 1, False)
     html = ""
     inTable = False
-    
+
     Do Until ts.AtEndOfStream
         line = Trim(ts.ReadLine)
         If Left(line, 1) = "|" And Right(line, 1) = "|" Then
@@ -194,11 +270,11 @@ Function ParseMarkdownTables(mdPath As String) As String
             End If
         End If
     Loop
-    
+
     If inTable Then
         html = html & "</table>"
     End If
-    
+
     ts.Close
     ParseMarkdownTables = html
 End Function
