@@ -56,258 +56,30 @@ else
 
 <body link=blue vlink=purple>
 
-<table border=0 cellpadding=0 cellspacing=0 width=792 style='border-collapse:
- collapse;table-layout:fixed;width:592pt'>
- <col width=141 style='mso-width-source:userset;mso-width-alt:4795;width:105pt'>
- <col width=96 style='mso-width-source:userset;mso-width-alt:3259;width:72pt'>
- <col width=111 span=5 style='mso-width-source:userset;mso-width-alt:3771;
- width:83pt'>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td colspan=6 rowspan=53 height=1272 class=xl71 width=681 style='height:954.0pt;
-  width:509pt'>计算说明（本节列出脚本中用于计算与检验的公式与步骤，便于复现）：<br>
-    <br>
-    1) 概率估计<br>
-    <span style='mso-spacerun:yes'>   </span>- 观测计数 A_i 为某类别的观测次数，总试验次数为
-  N（或在两类比较中为 m = A + B）。<br>
-    <span style='mso-spacerun:yes'>   </span>- 类别的估计概率： p_hat = A / N
-  （若只比较两类，则条件概率 p_hat = A / m）。<br>
-    <br>
-    2) Wilson 置信区间（用于单个类别概率的置信区间，双侧）<br>
-    <span style='mso-spacerun:yes'>   </span>- 给定显著性水平 alpha（双侧），先计算 z =
-  Phi^{-1}(1 - alpha/2)。<br>
-    <span style='mso-spacerun:yes'>   </span>- 设 p_hat = A / N，<br>
-    <span style='mso-spacerun:yes'>     </span>denom = 1 + z^2 / N<br>
-    <span style='mso-spacerun:yes'>     </span>center = p_hat + z^2 /
-  (2N)<br>
-    <span style='mso-spacerun:yes'>     </span>rad = z * sqrt(
-  p_hat*(1-p_hat)/N + z^2/(4N^2) )<br>
-    <span style='mso-spacerun:yes'>     </span>下界 lower = (center - rad) /
-  denom<br>
-    <span style='mso-spacerun:yes'>     </span>上界 upper = (center + rad) /
-  denom<br>
-    <span style='mso-spacerun:yes'>   </span>- 区间被截断到 [0,1]。<br>
-    <br>
-    3) 两类显著性比较（用于判断 A &gt; B）<br>
-    <span style='mso-spacerun:yes'>   </span>- 只看落在 A 或 B 的样本，令 m = A +
-  B。<br>
-    <span style='mso-spacerun:yes'>   </span>- 在原假设 H0: p_A = p_B（条件下 p =
-  0.5）下，A ~ Binomial(m, 0.5)。<br>
-    <span style='mso-spacerun:yes'>   </span>- 使用精确二项检验（binomtest）做单侧检验：H1: p_A
-  &gt; 0.5（即 A 的条件概率大于 B）。<br>
-    <span style='mso-spacerun:yes'>   </span>- 得到单侧 p_value（脚本中称为原始
-  p_value）。<br>
-    <br>
-    4) 多重比较校正（组内 Bonferroni）<br>
-    <span style='mso-spacerun:yes'>   </span>- 在同一组（例如门组或某方向子组）内做所有两两比较，若组内共有 T
-  个两两比较，<br>
-    <span style='mso-spacerun:yes'>     </span>则每次检验的显著性阈值设为 alpha_per_test =
-  overall_alpha / T（overall_alpha 默认为 0.05）。<br>
-    <span style='mso-spacerun:yes'>   </span>- 仅当单侧 p_value &lt;=
-  alpha_per_test 时，记录显著结论 A&gt;B（或 B&gt;A）。<br>
-    <br>
-    5) 差值与效应量（使用总样本 N 作为分母）<br>
-    <span style='mso-spacerun:yes'>   </span>- 在两类比较中，差值定义为：<br>
-    <span style='mso-spacerun:yes'>       </span>diff_total = (A/N) - (B/N)，其中
-  N 为总样本量。<br>
-    <span style='mso-spacerun:yes'>   </span>- 这样差值直接反映在总样本中的概率差异，便于与“误差 ≤1%（按
-  N 分母）”规则对齐。<br>
-    <span style='mso-spacerun:yes'>   </span>- 在结论页中，差值单元格按以下规则着色：<br>
-    <span style='mso-spacerun:yes'>       </span>&lt;1% → 灰色；1%~2% → 黄色；≥2% →
-  绿色。<br>
-    <br>
-    6) 方向比较限制（脚本实现细节）<br>
-    <span style='mso-spacerun:yes'>   </span>- 方向分为两组：直角组 = {Left, Up, Right,
-  Down}；斜角组 = {Up-Left, Up-Right, Down-Right, Down-Left}。<br>
-    <span style='mso-spacerun:yes'>   </span>- 仅在组内做两两比较，不跨组比较。<br>
-    <br>
-    7) 概率统计表（概率统计页）<br>
-    <span style='mso-spacerun:yes'>   </span>- 每个类别的概率由原始计数除以 Total 得到：Door_X =
-  Door_X_count / Total；Dir_Y = Dir_Y_count / Total。<br>
-    <br>
-    8) 均值/方差/标准差（均值偏差页）<br>
-    <span style='mso-spacerun:yes'>   </span>- 组内均值（例如门组）: mean = mean(p_i)（忽略为
-  0 的项以避免 Total=0 的影响）。<br>
-    <span style='mso-spacerun:yes'>   </span>- 以百分比形式计算偏差列： (p_i - mean) *
-  100。<br>
-    <span style='mso-spacerun:yes'>   </span>-
-  方差（%^2）使用样本方差（ddof=0），标准差为方差的平方根（%）。<br>
-    <br>
-    本页（置信区间验证）中特别说明：<br>
-    <span style='mso-spacerun:yes'> </span>- Doors 使用的 alpha = 0.05 /
-  4（Bonferroni 分配用于单个类别的 Wilson 区间计算）。<br>
-    <span style='mso-spacerun:yes'> </span>- Directions 使用的 alpha = 0.05 /
-  8（Bonferroni 分配用于单个方向的 Wilson 区间计算）。<br>
-    </td>
-  <td width=111 style='width:83pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
- </tr>
- <tr height=24 style='mso-height-source:userset;height:18.0pt'>
-  <td height=24 style='height:18.0pt'></td>
+<table border=0 cellpadding=0 cellspacing=0 width=537 style='border-collapse:
+ collapse;table-layout:fixed;width:402pt'>
+ <col width=180 style='mso-width-source:userset;mso-width-alt:6144;width:135pt'>
+ <col width=46 style='mso-width-source:userset;mso-width-alt:1553;width:34pt'>
+ <col width=68 span=4 style='width:51pt'>
+ <col width=39 style='mso-width-source:userset;mso-width-alt:1331;width:29pt'>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl66 width=180 style='height:13.5pt;width:135pt'>实验 1 -
+  Doors</td>
+  <td width=46 style='width:34pt'></td>
+  <td width=68 style='width:51pt'></td>
+  <td width=68 style='width:51pt'></td>
+  <td width=68 style='width:51pt'></td>
+  <td width=68 style='width:51pt'></td>
+  <td width=39 style='width:29pt'></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 1 - Doors</td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
- </tr>
- <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -346,21 +118,31 @@ else
   <td align=center>TRUE</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 1 - Directio<span
-  style='display:none'>ns</span></td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 1 - Directions</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -434,21 +216,41 @@ else
   <td align=right>0.005317</td>
   <td align=center>TRUE</td>
  </tr>
- <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
-  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 1a - Doors</td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 1a - Doors</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -487,21 +289,31 @@ else
   <td align=center>TRUE</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 1a - Directi<span
-  style='display:none'>ons</span></td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 1a - Directions</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -575,21 +387,41 @@ else
   <td align=right>0.00531</td>
   <td align=center>TRUE</td>
  </tr>
- <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
-  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 1b - Doors</td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 1b - Doors</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -628,21 +460,31 @@ else
   <td align=center>TRUE</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 1b - Directi<span
-  style='display:none'>ons</span></td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 1b - Directions</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -716,21 +558,41 @@ else
   <td align=right>0.00532</td>
   <td align=center>TRUE</td>
  </tr>
- <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
-  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 1c - Doors</td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 1c - Doors</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -769,21 +631,31 @@ else
   <td align=center>TRUE</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 1c - Directi<span
-  style='display:none'>ons</span></td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 1c - Directions</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -857,21 +729,41 @@ else
   <td align=right>0.005245</td>
   <td align=center>TRUE</td>
  </tr>
- <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
-  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 1d - Doors</td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 1d - Doors</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -910,21 +802,31 @@ else
   <td align=center>TRUE</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 1d - Directi<span
-  style='display:none'>ons</span></td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 1d - Directions</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -998,21 +900,41 @@ else
   <td align=right>0.005254</td>
   <td align=center>TRUE</td>
  </tr>
- <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
-  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 2 - Doors</td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 2 - Doors</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -1051,21 +973,31 @@ else
   <td align=center>TRUE</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 2 - Directio<span
-  style='display:none'>ns</span></td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 2 - Directions</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -1139,21 +1071,41 @@ else
   <td align=right>0.005353</td>
   <td align=center>TRUE</td>
  </tr>
- <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
-  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 2a - Doors</td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 2a - Doors</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -1192,21 +1144,31 @@ else
   <td align=center>TRUE</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 2a - Directi<span
-  style='display:none'>ons</span></td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 2a - Directions</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -1280,21 +1242,41 @@ else
   <td align=right>0.005346</td>
   <td align=center>TRUE</td>
  </tr>
- <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
-  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 2b - Doors</td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 2b - Doors</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -1333,21 +1315,31 @@ else
   <td align=center>TRUE</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 2b - Directi<span
-  style='display:none'>ons</span></td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 2b - Directions</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -1421,21 +1413,41 @@ else
   <td align=right>0.005346</td>
   <td align=center>TRUE</td>
  </tr>
- <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
-  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 2c - Doors</td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 2c - Doors</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -1474,21 +1486,31 @@ else
   <td align=center>TRUE</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 2c - Directi<span
-  style='display:none'>ons</span></td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 2c - Directions</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -1562,21 +1584,41 @@ else
   <td align=right>0.00526</td>
   <td align=center>TRUE</td>
  </tr>
- <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
-  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 2d - Doors</td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 2d - Doors</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -1615,21 +1657,31 @@ else
   <td align=center>TRUE</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 2d - Directi<span
-  style='display:none'>ons</span></td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 2d - Directions</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -1703,21 +1755,41 @@ else
   <td align=right>0.005284</td>
   <td align=center>TRUE</td>
  </tr>
- <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
-  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 3 - Doors</td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 3 - Doors</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -1756,21 +1828,31 @@ else
   <td align=center>TRUE</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 3 - Directio<span
-  style='display:none'>ns</span></td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 3 - Directions</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -1844,21 +1926,41 @@ else
   <td align=right>0.005418</td>
   <td align=center>TRUE</td>
  </tr>
- <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
-  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 3a - Doors</td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 3a - Doors</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -1897,21 +1999,31 @@ else
   <td align=center>TRUE</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 3a - Directi<span
-  style='display:none'>ons</span></td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 3a - Directions</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -1985,21 +2097,41 @@ else
   <td align=right>0.005443</td>
   <td align=center>TRUE</td>
  </tr>
- <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
-  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 3b - Doors</td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 3b - Doors</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -2038,21 +2170,31 @@ else
   <td align=center>TRUE</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 3b - Directi<span
-  style='display:none'>ons</span></td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 3b - Directions</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -2126,21 +2268,41 @@ else
   <td align=right>0.005417</td>
   <td align=center>TRUE</td>
  </tr>
- <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
-  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 3c - Doors</td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 3c - Doors</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -2179,21 +2341,31 @@ else
   <td align=center>TRUE</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 3c - Directi<span
-  style='display:none'>ons</span></td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 3c - Directions</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -2267,21 +2439,41 @@ else
   <td align=right>0.005225</td>
   <td align=center>TRUE</td>
  </tr>
- <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
-  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 3d - Doors</td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 3d - Doors</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -2320,21 +2512,31 @@ else
   <td align=center>TRUE</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 3d - Directi<span
-  style='display:none'>ons</span></td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 3d - Directions</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -2408,21 +2610,41 @@ else
   <td align=right>0.005326</td>
   <td align=center>TRUE</td>
  </tr>
- <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
-  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 4 - Doors</td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 4 - Doors</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -2461,21 +2683,31 @@ else
   <td align=center>TRUE</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 4 - Directio<span
-  style='display:none'>ns</span></td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 4 - Directions</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -2549,21 +2781,41 @@ else
   <td align=right>0.005477</td>
   <td align=center>TRUE</td>
  </tr>
- <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
-  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 4a - Doors</td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 4a - Doors</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -2602,21 +2854,31 @@ else
   <td align=center>TRUE</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 4a - Directi<span
-  style='display:none'>ons</span></td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 4a - Directions</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -2690,21 +2952,41 @@ else
   <td align=right>0.005516</td>
   <td align=center>TRUE</td>
  </tr>
- <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
-  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 4b - Doors</td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 4b - Doors</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -2743,21 +3025,31 @@ else
   <td align=center>TRUE</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 4b - Directi<span
-  style='display:none'>ons</span></td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 4b - Directions</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -2831,21 +3123,41 @@ else
   <td align=right>0.005503</td>
   <td align=center>TRUE</td>
  </tr>
- <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
-  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 4c - Doors</td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 4c - Doors</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -2884,21 +3196,31 @@ else
   <td align=center>TRUE</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 4c - Directi<span
-  style='display:none'>ons</span></td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 4c - Directions</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -2972,21 +3294,41 @@ else
   <td align=right>0.005242</td>
   <td align=center>TRUE</td>
  </tr>
- <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
-  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 4d - Doors</td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 4d - Doors</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -3025,21 +3367,31 @@ else
   <td align=center>TRUE</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 4d - Directi<span
-  style='display:none'>ons</span></td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 4d - Directions</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -3113,21 +3465,41 @@ else
   <td align=right>0.005367</td>
   <td align=center>TRUE</td>
  </tr>
- <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
-  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 5 - Doors</td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 5 - Doors</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -3166,21 +3538,31 @@ else
   <td align=center>TRUE</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 5 - Directio<span
-  style='display:none'>ns</span></td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 5 - Directions</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -3254,21 +3636,41 @@ else
   <td align=right>0.005493</td>
   <td align=center>TRUE</td>
  </tr>
- <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
-  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 5a - Doors</td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 5a - Doors</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -3307,21 +3709,31 @@ else
   <td align=center>TRUE</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 5a - Directi<span
-  style='display:none'>ons</span></td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 5a - Directions</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -3395,21 +3807,41 @@ else
   <td align=right>0.005561</td>
   <td align=center>TRUE</td>
  </tr>
- <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
-  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 5b - Doors</td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 5b - Doors</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -3448,21 +3880,31 @@ else
   <td align=center>TRUE</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 5b - Directi<span
-  style='display:none'>ons</span></td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 5b - Directions</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -3536,21 +3978,41 @@ else
   <td align=right>0.00547</td>
   <td align=center>TRUE</td>
  </tr>
- <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
-  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 5c - Doors</td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 5c - Doors</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -3589,21 +4051,31 @@ else
   <td align=center>TRUE</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 5c - Directi<span
-  style='display:none'>ons</span></td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 5c - Directions</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -3677,21 +4149,41 @@ else
   <td align=right>0.005562</td>
   <td align=center>TRUE</td>
  </tr>
- <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
-  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 5d - Doors</td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 5d - Doors</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -3730,21 +4222,31 @@ else
   <td align=center>TRUE</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 5d - Directi<span
-  style='display:none'>ons</span></td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 5d - Directions</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -3818,21 +4320,41 @@ else
   <td align=right>0.005573</td>
   <td align=center>TRUE</td>
  </tr>
- <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
-  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 6 - Doors</td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 6 - Doors</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -3871,21 +4393,31 @@ else
   <td align=center>TRUE</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 6 - Directio<span
-  style='display:none'>ns</span></td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 6 - Directions</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -3959,21 +4491,41 @@ else
   <td align=right>0.005661</td>
   <td align=center>TRUE</td>
  </tr>
- <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
-  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 6a - Doors</td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 6a - Doors</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -4012,21 +4564,31 @@ else
   <td align=center>TRUE</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 6a - Directi<span
-  style='display:none'>ons</span></td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 6a - Directions</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -4100,21 +4662,41 @@ else
   <td align=right>0.005661</td>
   <td align=center>TRUE</td>
  </tr>
- <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
-  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 6b - Doors</td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 6b - Doors</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -4153,21 +4735,31 @@ else
   <td align=center>TRUE</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 6b - Directi<span
-  style='display:none'>ons</span></td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 6b - Directions</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -4241,21 +4833,41 @@ else
   <td align=right>0.005661</td>
   <td align=center>TRUE</td>
  </tr>
- <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
-  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 6c - Doors</td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 6c - Doors</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -4294,21 +4906,31 @@ else
   <td align=center>TRUE</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 6c - Directi<span
-  style='display:none'>ons</span></td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 6c - Directions</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -4382,21 +5004,41 @@ else
   <td align=right>0.005536</td>
   <td align=center>TRUE</td>
  </tr>
- <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
-  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 6d - Doors</td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 6d - Doors</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -4435,21 +5077,31 @@ else
   <td align=center>TRUE</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 6d - Directi<span
-  style='display:none'>ons</span></td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 6d - Directions</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -4523,21 +5175,41 @@ else
   <td align=right>0.005547</td>
   <td align=center>TRUE</td>
  </tr>
- <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
-  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 7 - Doors</td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 7 - Doors</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -4576,21 +5248,31 @@ else
   <td align=center>TRUE</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 7 - Directio<span
-  style='display:none'>ns</span></td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 7 - Directions</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -4664,21 +5346,41 @@ else
   <td align=right>0.005456</td>
   <td align=center>TRUE</td>
  </tr>
- <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
-  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 7a - Doors</td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 7a - Doors</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -4717,21 +5419,31 @@ else
   <td align=center>TRUE</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 7a - Directi<span
-  style='display:none'>ons</span></td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 7a - Directions</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -4805,21 +5517,41 @@ else
   <td align=right>0.00554</td>
   <td align=center>TRUE</td>
  </tr>
- <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
-  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 7b - Doors</td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 7b - Doors</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -4858,21 +5590,31 @@ else
   <td align=center>TRUE</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 7b - Directi<span
-  style='display:none'>ons</span></td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 7b - Directions</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -4946,21 +5688,41 @@ else
   <td align=right>0.005507</td>
   <td align=center>TRUE</td>
  </tr>
- <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
-  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 7c - Doors</td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 7c - Doors</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -4999,21 +5761,31 @@ else
   <td align=center>TRUE</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 7c - Directi<span
-  style='display:none'>ons</span></td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 7c - Directions</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -5087,21 +5859,41 @@ else
   <td align=right>0.005518</td>
   <td align=center>TRUE</td>
  </tr>
- <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
-  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 8 - Doors</td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 8 - Doors</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -5140,21 +5932,31 @@ else
   <td align=center>TRUE</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 8 - Directio<span
-  style='display:none'>ns</span></td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 8 - Directions</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -5228,21 +6030,41 @@ else
   <td align=right>0.005518</td>
   <td align=center>TRUE</td>
  </tr>
- <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
-  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 8a - Doors</td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 8a - Doors</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -5281,21 +6103,31 @@ else
   <td align=center>TRUE</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 8a - Directi<span
-  style='display:none'>ons</span></td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 8a - Directions</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -5369,21 +6201,41 @@ else
   <td align=right>0.005518</td>
   <td align=center>TRUE</td>
  </tr>
- <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
-  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 8b - Doors</td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 8b - Doors</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -5422,21 +6274,31 @@ else
   <td align=center>TRUE</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 8b - Directi<span
-  style='display:none'>ons</span></td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 8b - Directions</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -5510,21 +6372,41 @@ else
   <td align=right>0.005518</td>
   <td align=center>TRUE</td>
  </tr>
- <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
-  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 8c - Doors</td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 8c - Doors</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -5563,21 +6445,31 @@ else
   <td align=center>TRUE</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 8c - Directi<span
-  style='display:none'>ons</span></td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 8c - Directions</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -5651,21 +6543,41 @@ else
   <td align=right>0.005563</td>
   <td align=center>TRUE</td>
  </tr>
- <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
-  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 10 - Doors</td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 10 - Doors</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -5704,21 +6616,31 @@ else
   <td align=center>TRUE</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 10 - Directi<span
-  style='display:none'>ons</span></td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 10 - Directions</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -5792,21 +6714,41 @@ else
   <td align=right>0.005169</td>
   <td align=center>TRUE</td>
  </tr>
- <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
-  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 10a - Doors</td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 10a - Doors</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -5845,21 +6787,31 @@ else
   <td align=center>TRUE</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 10a - Direct<span
-  style='display:none'>ions</span></td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 10a - Directions</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -5933,21 +6885,41 @@ else
   <td align=right>0.00555</td>
   <td align=center>TRUE</td>
  </tr>
- <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
-  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 11 - Doors</td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 11 - Doors</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -5986,21 +6958,31 @@ else
   <td align=center>TRUE</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 11 - Directi<span
-  style='display:none'>ons</span></td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 11 - Directions</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -6074,21 +7056,41 @@ else
   <td align=right>0.005587</td>
   <td align=center>TRUE</td>
  </tr>
- <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
-  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 11a - Doors</td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 11a - Doors</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -6127,21 +7129,31 @@ else
   <td align=center>TRUE</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 11a - Direct<span
-  style='display:none'>ions</span></td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 11a - Directions</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -6215,21 +7227,41 @@ else
   <td align=right>0.005661</td>
   <td align=center>TRUE</td>
  </tr>
- <tr height=36 style='height:27.0pt;mso-xlrowspan:2'>
-  <td height=36 colspan=7 style='height:27.0pt;mso-ignore:colspan'></td>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 12 - Doors</td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 12 - Doors</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+ </tr>
+ <tr height=18 style='height:13.5pt'>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -6268,21 +7300,31 @@ else
   <td align=center>TRUE</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 colspan=7 style='height:13.5pt;mso-ignore:colspan'></td>
+  <td height=18 style='height:13.5pt'></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>实验 12 - Directi<span
-  style='display:none'>ons</span></td>
-  <td colspan=6 style='mso-ignore:colspan'></td>
+  <td height=18 class=xl66 style='height:13.5pt'>实验 12 - Directions</td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
+  <td></td>
  </tr>
  <tr height=18 style='height:13.5pt'>
-  <td height=18 class=xl70 style='height:13.5pt'>类别</td>
-  <td class=xl70>频数</td>
-  <td class=xl70>估计概率</td>
-  <td class=xl70>下界</td>
-  <td class=xl70>上界</td>
-  <td class=xl70>误差幅度</td>
-  <td class=xl70>≤1%</td>
+  <td height=18 class=xl66 style='height:13.5pt'>类别</td>
+  <td class=xl66>频数</td>
+  <td class=xl66>估计概率</td>
+  <td class=xl66>下界</td>
+  <td class=xl66>上界</td>
+  <td class=xl66>误差幅度</td>
+  <td class=xl66>≤1%</td>
  </tr>
  <tr height=18 style='height:13.5pt'>
   <td height=18 style='height:13.5pt'>Left</td>
@@ -6358,13 +7400,13 @@ else
  </tr>
  <![if supportMisalignedColumns]>
  <tr height=0 style='display:none'>
-  <td width=141 style='width:105pt'></td>
-  <td width=96 style='width:72pt'></td>
-  <td width=111 style='width:83pt'></td>
-  <td width=111 style='width:83pt'></td>
-  <td width=111 style='width:83pt'></td>
-  <td width=111 style='width:83pt'></td>
-  <td width=111 style='width:83pt'></td>
+  <td width=180 style='width:135pt'></td>
+  <td width=46 style='width:34pt'></td>
+  <td width=68 style='width:51pt'></td>
+  <td width=68 style='width:51pt'></td>
+  <td width=68 style='width:51pt'></td>
+  <td width=68 style='width:51pt'></td>
+  <td width=39 style='width:29pt'></td>
  </tr>
  <![endif]>
 </table>

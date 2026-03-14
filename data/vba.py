@@ -1,6 +1,8 @@
 # data/vba.py
 import os
 import sys
+import subprocess
+import shutil
 import win32com.client
 import path  # 你的 path.py，里面有 TARGET_PATH
 
@@ -10,16 +12,61 @@ if ROOT not in sys.path:
 
 import BD
 
+# ---------- 配置 ----------
+# False: 增量更新（保留已有 html）
+# True: 强制更新（先清理 data 下非 .dat/.xlsx 文件，再重建网页）
+FORCE_UPDATE = False
+
+# 仅这些“数据目录”会参与强制清理（其子目录会递归清理）
+DATA_FOLDERS = {
+    "BD",
+    "BDI",
+    "BDIKp",
+    "BDIXL",
+    "BDIXLKp",
+    "BDKp",
+    "BDXL",
+    "BDXLKp",
+}
+
 def run_vba_macro(vba_code, macro_name):
-    excel = win32com.client.Dispatch("Excel.Application")
-    excel.Visible = False
-    excel.DisplayAlerts = False
-    wb = excel.Workbooks.Add()
-    vb_module = wb.VBProject.VBComponents.Add(1)
-    vb_module.CodeModule.AddFromString(vba_code)
-    excel.Application.Run(macro_name)
-    wb.Close(SaveChanges=False)
-    excel.Quit()
+    excel = win32com.client.DispatchEx("Excel.Application")
+    wb = None
+    try:
+        excel.Visible = False
+        excel.DisplayAlerts = False
+        excel.AskToUpdateLinks = False
+        excel.AlertBeforeOverwriting = False
+        excel.EnableEvents = False
+        excel.ScreenUpdating = False
+        wb = excel.Workbooks.Add()
+        vb_module = wb.VBProject.VBComponents.Add(1)
+        vb_module.CodeModule.AddFromString(vba_code)
+        excel.Application.Run(macro_name)
+    finally:
+        # 结束自动化时保持静默，避免弹出“是否保存工作簿”提示
+        try:
+            excel.DisplayAlerts = False
+        except Exception:
+            pass
+        if wb is not None:
+            try:
+                wb.Saved = True
+                wb.Close(SaveChanges=False)
+            except Exception:
+                pass
+        # 防止有残留工作簿触发关闭提示
+        try:
+            while excel.Workbooks.Count > 0:
+                w = excel.Workbooks(1)
+                w.Saved = True
+                w.Close(SaveChanges=False)
+        except Exception:
+            pass
+        try:
+            excel.Quit()
+        except Exception:
+            pass
 
 def run_bd_for_missing_xlsx():
     dat_dir = path.TARGET_PATH
@@ -30,9 +77,66 @@ def run_bd_for_missing_xlsx():
     print("statistics.md:", res.get("statistics_md"))
     return res
 
+
+def cleanup_for_force_update(base_dir):
+    """
+    强制更新时执行：仅清理“数据目录”内除 .dat 外的文件（含 .xlsx）。
+    不触碰其他目录（例如根目录脚本、summary、__pycache__ 等）。
+    """
+    keep_exts = {".dat"}
+    deleted_files = 0
+    deleted_dirs = 0
+
+    print("FORCE_UPDATE=True: 仅清理数据目录中的旧网页与临时文件...")
+
+    for folder in sorted(DATA_FOLDERS):
+        folder_path = os.path.join(base_dir, folder)
+        if not os.path.isdir(folder_path):
+            continue
+
+        for root, dirs, files in os.walk(folder_path, topdown=False):
+            # 删除文件：仅保留 .dat（xlsx 也清理，后续由流程重建）
+            for name in files:
+                full = os.path.join(root, name)
+                ext = os.path.splitext(name)[1].lower()
+                if ext in keep_exts:
+                    continue
+                try:
+                    os.remove(full)
+                    deleted_files += 1
+                except Exception as e:
+                    print(f"删除文件失败: {full} -> {e}")
+
+            # 删除 Excel 导出伴生目录 *.files
+            for d in dirs:
+                if not d.lower().endswith(".files"):
+                    continue
+                full_dir = os.path.join(root, d)
+                try:
+                    shutil.rmtree(full_dir, ignore_errors=False)
+                    deleted_dirs += 1
+                except Exception as e:
+                    print(f"删除目录失败: {full_dir} -> {e}")
+
+    print(f"清理完成: 删除文件 {deleted_files} 个, 删除目录 {deleted_dirs} 个")
+
+
+def run_produce_outputs():
+    script_path = os.path.join(os.path.dirname(__file__), "produce_outputs.py")
+    print("生成 summary 汇总（调用 produce_outputs.py）...")
+    result = subprocess.run([sys.executable, script_path], cwd=path.TARGET_PATH)
+    if result.returncode != 0:
+        raise RuntimeError(f"produce_outputs.py 执行失败，退出码: {result.returncode}")
+    print("summary 汇总生成完成。")
+
 if __name__ == "__main__":
+    if FORCE_UPDATE:
+        cleanup_for_force_update(path.TARGET_PATH)
+
     # 先生成缺失的 xlsx（如果需要）
     run_bd_for_missing_xlsx()
+    # 再生成结论汇总 xlsx
+    run_produce_outputs()
 
     vba_code = f"""
 Sub BatchSaveAsHTMLRecursive()
@@ -41,19 +145,23 @@ Sub BatchSaveAsHTMLRecursive()
     Dim dict As Object
     Dim indexPath As String
     Dim f As Integer
+    Dim forceUpdate As Integer
 
     ' 关闭 Excel 弹窗与屏幕更新，避免提示框
     Application.DisplayAlerts = False
+    Application.AskToUpdateLinks = False
+    Application.AlertBeforeOverwriting = False
     Application.ScreenUpdating = False
 
     Dim rootPath As String
     rootPath = "{path.TARGET_PATH}"
+    forceUpdate = {1 if FORCE_UPDATE else 0}
 
     Set fso = CreateObject("Scripting.FileSystemObject")
     Set folder = fso.GetFolder(rootPath)
     Set dict = CreateObject("Scripting.Dictionary")
 
-    ProcessFolder folder, rootPath, dict
+    ProcessFolder folder, rootPath, dict, forceUpdate
 
     indexPath = rootPath & "\\index.html"
     f = FreeFile
@@ -95,13 +203,15 @@ Sub BatchSaveAsHTMLRecursive()
         sHtmlFull = rootPath & "\\" & sHtmlRel
 
         If fso.FileExists(sXlsxFull) Then
-            ' 如果 html 不存在，则打开 xlsx 并另存为 html
-            If Not fso.FileExists(sHtmlFull) Then
+            ' 增量模式：仅缺失时生成；强制模式：总是覆盖生成
+            If (Not fso.FileExists(sHtmlFull)) Or forceUpdate = 1 Then
                 On Error Resume Next
                 Dim wbSum As Workbook
-                Set wbSum = Workbooks.Open(sXlsxFull)
+                Set wbSum = Workbooks.Open(sXlsxFull, UpdateLinks:=0, ReadOnly:=False, IgnoreReadOnlyRecommended:=True)
                 If Not wbSum Is Nothing Then
+                    Call AutoFitWorkbookColumns(wbSum)
                     wbSum.SaveAs sHtmlFull, FileFormat:=44
+                    wbSum.Saved = True
                     wbSum.Close SaveChanges:=False
                     Call FixEncoding(sHtmlFull)
                 End If
@@ -135,12 +245,11 @@ Sub BatchSaveAsHTMLRecursive()
     Print #f, "</body></html>"
     Close #f
 
-    ' 恢复屏幕更新与提示（可选）
+    ' 恢复屏幕更新（提示由 Python 自动化层统一管理）
     Application.ScreenUpdating = True
-    Application.DisplayAlerts = True
 End Sub
 
-Sub ProcessFolder(f As Object, rootPath As String, dict As Object)
+Sub ProcessFolder(f As Object, rootPath As String, dict As Object, forceUpdate As Integer)
     Dim file As Object
     Dim subFolder As Object
     Dim wb As Workbook
@@ -170,9 +279,11 @@ Sub ProcessFolder(f As Object, rootPath As String, dict As Object)
         If LCase(Right(file.Name, 5)) = ".xlsx" Then
             If Left(file.Name, 2) <> "~$" Then
                 htmlPath = Replace(file.Path, ".xlsx", ".html")
-                If Dir(htmlPath) = "" Then
-                    Set wb = Workbooks.Open(file.Path)
+                If Dir(htmlPath) = "" Or forceUpdate = 1 Then
+                    Set wb = Workbooks.Open(file.Path, UpdateLinks:=0, ReadOnly:=False, IgnoreReadOnlyRecommended:=True)
+                    Call AutoFitWorkbookColumns(wb)
                     wb.SaveAs htmlPath, FileFormat:=44
+                    wb.Saved = True
                     wb.Close SaveChanges:=False
                     Call FixEncoding(htmlPath)
                 End If
@@ -191,7 +302,18 @@ Sub ProcessFolder(f As Object, rootPath As String, dict As Object)
     End If
 
     For Each subFolder In f.SubFolders
-        ProcessFolder subFolder, rootPath, dict
+        ProcessFolder subFolder, rootPath, dict, forceUpdate
+    Next
+End Sub
+
+Sub AutoFitWorkbookColumns(wb As Workbook)
+    Dim ws As Worksheet
+    For Each ws In wb.Worksheets
+        On Error Resume Next
+        ws.Cells.WrapText = False
+        ws.Cells.EntireColumn.AutoFit
+        ws.Rows.AutoFit
+        On Error GoTo 0
     Next
 End Sub
 

@@ -1,65 +1,74 @@
 # 头目方向统计模组说明
 
-## BossDirection
+本仓库用于收集并分析以撒相关头目方向实验数据，支持多种条件组合（合层、刀柄、指定物品等），并提供从 dat 到 Excel 再到网页的完整输出链路。
 
-用于统计各楼层：
+## 仓库结构
 
-1. 最终头目房在初始房间的方向
-2. 各楼层初始房间，选择哪个门前进离最终头目房更近
+1. BossDirection* 与 BossDirectionItems* 目录
+游戏侧统计模组源码与相关内容。
 
-## BossDirectionXL
+2. BD.py
+数据分析核心脚本。负责将 dat 实验数据转换为 xlsx，并输出统计结果（含概率表、图表、结论 sheet、statistics.md）。
 
-用于统计(合层):
+3. data 目录
+数据处理工作区与网页发布目录。
+常用入口是 data/vba.py，用于自动串联整个产出流程。
 
-1. 各楼层首个头目房（虚空层选精神错乱房间）在初始房间的方向
-2. 各楼层初始房间，选择哪个门前进离首个头目房（虚空层选精神错乱房间）更近
+## 模组用途总览
 
-## BossDirectionKp
+1. BossDirection
+统计各楼层最终头目房方向，以及初始房间四门中哪一门更接近最终头目。
 
-用于统计角色拥有刀柄时：
+2. BossDirectionXL
+统计合层时首个头目房（虚空层取精神错乱房间）方向与更优前进门。
 
-1. 4c/4d层最终头目房在初始房间的方向
-2. 4c/4d层初始房间，选择哪个门前进离最终头目房更近
+3. BossDirectionKp
+统计拥有刀柄时（4c/4d）最终头目方向与更优前进门。
 
-## BossDirectionXLKp
+4. BossDirectionXLKp
+统计合层且拥有刀柄时（3c/3d）首个头目方向与更优前进门。
 
-用于统计(合层)角色拥有刀柄时：
+5. BossDirectionItems
+统计携带指定物品时的最终头目方向与更优前进门。
 
-1. 3c/3d层首个头目房在初始房间的方向
-2. 3c/3d层初始房间，选择哪个门前进离首个头目房更近
+6. BossDirectionItemsXL
+统计合层且携带指定物品时的首个头目方向与更优前进门。
 
-## BossDirectionItems
+7. BossDirectionItemsKp
+统计携带指定物品且拥有刀柄时（4c/4d）的方向与更优前进门。
 
-用于统计携带指定物品时：
+8. BossDirectionItemsXLKp
+统计合层、携带指定物品且拥有刀柄时（3c/3d）的方向与更优前进门。
 
-1. 各楼层最终头目房在初始房间的方向
-2. 各楼层初始房间，选择哪个门前进离最终头目房更近
+## 数据处理流程（推荐）
 
-## BossDirectionXLItems
+在 data 目录执行：
 
-用于统计(合层)携带指定物品时：
+python vba.py
 
-1. 各楼层首个头目房（虚空层选精神错乱房间）在初始房间的方向
-2. 各楼层初始房间，选择哪个门前进离首个头目房（虚空层选精神错乱房间）更近
+流程说明：
 
-## BossDirectionItemsKp
+1. 可选强制清理旧过程文件（由 FORCE_UPDATE 控制）。
+2. 调用 BD.py：dat 转 xlsx，并更新 statistics.md。
+3. 调用 produce_outputs.py：生成 summary 结论汇总 xlsx。
+4. 调用 Excel VBA：将 xlsx 批量导出为 html，刷新 index.html。
 
-用于统计携带指定物品和刀柄时：
+## 输出结果
 
-1. 4c/4d层最终头目房在初始房间的方向
-2. 4c/4d层初始房间，选择哪个门前进离最终头目房更近
+1. data/statistics.md
+数据统计摘要。
 
-## BossDirectionItemsXLKp
+2. data/summary/*.xlsx
+有效结论汇总。
 
-用于统计(合层)携带指定物品和刀柄时：
+3. data 下各数据目录中的 *.html 及 *.files
+实验结果网页及资源文件。
 
-1. 3c/3d层首个头目房在初始房间的方向
-2. 3c/3d层初始房间，选择哪个门前进离首个头目房更近
+4. data/index.html
+网页总导航入口。
 
-## BD.py
+## 环境要求
 
-用于处理BossDirection系列模组的实验数据*.dat，生成包含实验数据、概率统计、归一化比例、门概率图和方向图的Excel文件，以及在data目录下生成statistics.md文件。
-
-## BDs
-
-BossDirection系列模组的实验数据。
+1. Windows。
+2. Microsoft Excel（用于 COM 自动化导出 html）。
+3. Python 常用依赖：pandas、openpyxl、xlsxwriter、pywin32、numpy、scipy、matplotlib。
