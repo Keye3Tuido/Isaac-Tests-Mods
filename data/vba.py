@@ -168,6 +168,10 @@ Sub BatchSaveAsHTMLRecursive()
     Open indexPath For Output As #f
     Print #f, "<html><head><meta charset='utf-8'><title>Excel 2 HTML</title></head><body>"
     Print #f, "<h1>Excel 2 HTML</h1>"
+    If fso.FileExists(rootPath & "\\math\\math.html") Then
+        Print #f, "<p><a href='math/math.html' target='_blank'>Math</a></p>"
+        Print #f, "<hr/>"
+    End If
     Print #f, ParseMarkdownTables(rootPath & "\\statistics.md")
     Print #f, "<hr/>"
 

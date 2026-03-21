@@ -52,6 +52,7 @@ python vba.py
 2. 调用 BD.py：dat 转 xlsx，并更新 statistics.md。
 3. 调用 produce_outputs.py：生成 summary 结论汇总 xlsx。
 4. 调用 Excel VBA：将 xlsx 批量导出为 html，刷新 index.html。
+5. index.html 顶部会优先加入指向 data/math/math.html 的“数据说明”链接（文件存在时显示）。
 
 ## 输出结果
 
@@ -65,7 +66,7 @@ python vba.py
 实验结果网页及资源文件。
 
 4. data/index.html
-网页总导航入口。
+网页总导航入口，顶部优先显示“数据说明”链接，并汇总统计表、各实验结果页与结论页链接。
 
 ## 环境要求
 

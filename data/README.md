@@ -19,6 +19,7 @@ python vba.py
 2. 调用 BD.py 处理 dat 并生成 xlsx（缺失时创建）。
 3. 调用 produce_outputs.py 生成 summary 下的结论汇总 xlsx。
 4. 通过 Excel VBA 将 xlsx 导出为 html，并刷新 index.html。
+5. 若 math/math.html 存在，则在 index.html 顶部加入“数据说明”链接。
 
 ## FORCE_UPDATE 配置说明
 
@@ -51,7 +52,7 @@ python vba.py
 ## 各脚本作用
 
 1. vba.py
-主入口脚本。负责串联清理、dat 转 xlsx、结论汇总、xlsx 转 html、生成 index.html。
+主入口脚本。负责串联清理、dat 转 xlsx、结论汇总、xlsx 转 html、生成 index.html，并在首页顶部加入“数据说明”入口（若 math/math.html 存在）。
 
 2. produce_outputs.py
 从各 xlsx 的结论 sheet 中提取有效结论，按大组输出 summary xlsx。
@@ -76,7 +77,7 @@ TARGET_PATH = r"你的 data 目录绝对路径"
 由 xlsx 导出的网页及伴生资源。
 
 4. index.html
-总览导航页，包含统计表与各 html 链接。
+总览导航页，顶部可显示“数据说明”链接，随后包含统计表与各 html 链接。
 
 ## 运行环境
 

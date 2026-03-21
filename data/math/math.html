@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>math</title>
+  <style>
+    body { font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; line-height: 1.65; max-width: 960px; margin: 2rem auto; padding: 0 1rem; }
+    pre, code { font-family: Consolas, "Courier New", monospace; }
+    pre { background: #f6f8fa; padding: 12px; overflow: auto; border-radius: 6px; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ddd; padding: 8px; }
+  </style>
+  <script>
+    window.MathJax = { tex: { inlineMath: [['$', '$'], ['\(', '\)']] }, svg: { fontCache: 'global' } };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+</head>
+<body>
+<h1>数据处理数学说明（误差 1%，置信度 99.9%）</h1>
+<h2>1. 目标与符号定义</h2>
+<p>设：</p>
+<ul>
+<li>$p$：某事件真实概率</li>
+<li>$\hat p$：样本频率（样本概率）</li>
+<li>$n$：样本量</li>
+<li>$\varepsilon$：允许误差上限</li>
+<li>$CL$：置信度（confidence level）</li>
+<li>$\alpha = 1-CL$：显著性水平（双侧区间总尾概率）</li>
+</ul>
+<p>本项目取：</p>
+<ul>
+<li>误差上限 $\varepsilon = 0.01$（即 $1\%$）</li>
+<li>置信度 $CL = 0.999$（即 $99.9\%$）</li>
+</ul>
+<hr />
+<h2>2. 样本量下限的理论依据</h2>
+<p>采用伯努利比例估计的正态近似（中心极限定理 / 二项分布正态近似）：</p>
+<p>$$
+\hat p \approx \mathcal N\!\left(p,\ \frac{p(1-p)}{n}\right)
+$$</p>
+<p>双侧误差控制关系：</p>
+<p>$$
+\Pr\!\left(\left|\hat p-p\right|\le z_{1-\alpha/2}\sqrt{\frac{p(1-p)}{n}}\right)\approx 1-\alpha
+$$</p>
+<p>若要求误差不超过 $\varepsilon$，需满足：</p>
+<p>$$
+z_{1-\alpha/2}\sqrt{\frac{p(1-p)}{n}} \le \varepsilon
+\quad\Longrightarrow\quad
+n \ge \frac{z_{1-\alpha/2}^2\,p(1-p)}{\varepsilon^2}
+$$</p>
+<hr />
+<h2>3. 最保守上界与统一样本量公式</h2>
+<p>因为 $p(1-p)$ 在 $p=0.5$ 时取最大值 $0.25$，故有：</p>
+<p>$$
+p(1-p)\le \frac14
+$$</p>
+<p>得到统一保守下界：</p>
+<p>$$
+n \ge \frac{z_{1-\alpha/2}^2}{4\varepsilon^2}
+$$</p>
+<hr />
+<h2>4. 数值代入（99.9%，1%）</h2>
+<h3>4.1 参数来源（首次出现数字的来源）</h3>
+<ul>
+<li>$0.01$：来自“误差不超过 $1\%$”</li>
+<li>$0.999$：来自“置信度 $99.9\%$”</li>
+<li>$\alpha = 1-0.999 = 0.001$</li>
+<li>$\alpha/2 = 0.0005$（双侧每侧尾概率）</li>
+<li>$\frac14$：来自最保守情形 $p=0.5$ 的 $p(1-p)$ 最大值</li>
+</ul>
+<h3>4.2 计算</h3>
+<p>$$
+z_{1-\alpha/2} = z_{0.9995} \approx 3.290526731
+$$</p>
+<p>$$
+n_{\min}
+=
+\left\lceil
+\frac{z^2}{4\times 0.01^2}
+\right\rceil
+=
+\left\lceil
+\frac{3.290526731^2}{0.0004}
+\right\rceil
+=
+\left\lceil
+27068.9154
+\right\rceil
+=
+27069
+$$</p>
+<p>结论：在“误差 $\le 1\%$、置信度 $99.9\%$”下，基础样本量为 <strong>27069</strong>。</p>
+<hr />
+<h2>5. 与项目样本量关系</h2>
+<p>若每组样本量取 $30000$，则：</p>
+<p>$$
+30000 > 27069
+$$</p>
+<p>因此该样本量高于理论基础下限。</p>
+<hr />
+<h2>6. 概率估计口径</h2>
+<p>对任一类别（门或方向）：</p>
+<ul>
+<li>记该类别观测计数为 $A$</li>
+<li>记该实验总样本量为 $N$</li>
+</ul>
+<p>则类别概率估计为：</p>
+<p>$$
+\hat p = \frac{A}{N}
+$$</p>
+<p>在两类比较（$A$ 类 vs $B$ 类）中，常定义条件样本量：</p>
+<p>$$
+m=A+B
+$$</p>
+<p>对应条件概率可写为：</p>
+<p>$$
+\hat p_A^{(\text{cond})}=\frac{A}{m}
+$$</p>
+<hr />
+<h2>7. 组内均值、偏差、方差、标准差</h2>
+<h3>7.1 分组定义（方向分组）</h3>
+<p>方向被拆成两组，分别计算：</p>
+<ul>
+<li>直角组：$\{\text{Left, Up, Right, Down}\}$（4 类）</li>
+<li>斜角组：$\{\text{Up-Left, Up-Right, Down-Right, Down-Left}\}$（4 类）</li>
+</ul>
+<p>门方向单独作为门组（4 类）。</p>
+<h3>7.2 组内均值与偏差</h3>
+<p>对某组内概率 $\{p_1,\dots,p_k\}$（这里 $k=4$），组内均值：</p>
+<p>$$
+\bar p=\frac{1}{k}\sum_{i=1}^k p_i
+$$</p>
+<p>偏差百分比列：</p>
+<p>$$
+\Delta_i(\%) = (p_i-\bar p)\times 100
+$$</p>
+<h3>7.3 方差与标准差（修正口径）</h3>
+<p>方差采用 <strong>总体方差口径</strong>（<code>ddof=0</code>）：</p>
+<p>$$
+\mathrm{Var}_{\%^2}
+=
+\frac{1}{k}\sum_{i=1}^k \left(100p_i-100\bar p\right)^2
+$$</p>
+<p>标准差为：</p>
+<p>$$
+\mathrm{Std}_{\%}=\sqrt{\mathrm{Var}_{\%^2}}
+$$</p>
+<p>说明：<code>ddof=0</code> 对应总体方差，不是样本方差（样本方差应是 <code>ddof=1</code>）。</p>
+<hr />
+<h2>8. Wilson 置信区间验证</h2>
+<p>对每个类别，给定 $A,N,\alpha$，先算：</p>
+<p>$$
+z=\Phi^{-1}(1-\alpha/2),\quad \hat p=\frac{A}{N}
+$$</p>
+<p>Wilson 区间：</p>
+<p>$$
+\mathrm{denom}=1+\frac{z^2}{N}
+$$</p>
+<p>$$
+\mathrm{center}=\hat p+\frac{z^2}{2N}
+$$</p>
+<p>$$
+\mathrm{rad}=z\sqrt{\frac{\hat p(1-\hat p)}{N}+\frac{z^2}{4N^2}}
+$$</p>
+<p>$$
+\mathrm{lower}=\frac{\mathrm{center}-\mathrm{rad}}{\mathrm{denom}},\quad
+\mathrm{upper}=\frac{\mathrm{center}+\mathrm{rad}}{\mathrm{denom}}
+$$</p>
+<p>并截断到 $[0,1]$。</p>
+<p>误差幅度定义为：</p>
+<p>$$
+\mathrm{margin}=\max(\hat p-\mathrm{lower},\ \mathrm{upper}-\hat p)
+$$</p>
+<p>验证项“$\le 1\%$”即判断：</p>
+<p>$$
+\mathrm{margin}\le 0.01
+$$</p>
+<h3>8.1 置信区间页的 $\alpha$ 取值</h3>
+<ul>
+<li>门组（4 类）：$\alpha_{\text{doors}}=0.05/4$</li>
+<li>方向组（8 类）：$\alpha_{\text{dirs}}=0.05/8$</li>
+</ul>
+<p>其中：</p>
+<ul>
+<li>$0.05$：区间验证使用的总体显著性水平</li>
+<li>$4,8$：分别来自门类别数、方向类别数（用于保守拆分）</li>
+</ul>
+<hr />
+<h2>9. 显著性检验与多重比较</h2>
+<h3>9.1 两类比较模型</h3>
+<p>比较 $A$ 类与 $B$ 类时，令 $m=A+B$。
+在原假设 $H_0:p_A=p_B$ 下，等价于：</p>
+<p>$$
+A\sim \mathrm{Binomial}(m,0.5)
+$$</p>
+<p>做单侧检验：</p>
+<p>$$
+H_1:p_A>0.5
+$$</p>
+<p>得到单侧 $p$ 值。</p>
+<h3>9.2 组内 Bonferroni 校正</h3>
+<p>若某组内可比类别数为 $k$，则两两比较总数：</p>
+<p>$$
+T=\binom{k}{2}
+$$</p>
+<p>校正后阈值：</p>
+<p>$$
+\alpha_{\text{per-test}}=\frac{0.05}{T}
+$$</p>
+<p>当且仅当：</p>
+<p>$$
+p\text{-value}\le \alpha_{\text{per-test}}
+$$</p>
+<p>才记录显著结论（如 $A>B$ 或 $B>A$）。</p>
+<h3>9.3 方向比较限制</h3>
+<p>方向比较仅在组内进行：</p>
+<ul>
+<li>直角组内两两比较（$k=4,\ T=6$）</li>
+<li>斜角组内两两比较（$k=4,\ T=6$）</li>
+</ul>
+<p>不做跨组比较。</p>
+<hr />
+<h2>10. 差值与效应量展示</h2>
+<p>对显著对比项，差值定义为：</p>
+<p>$$
+\mathrm{diff}_{\text{total}}=\frac{A}{N}-\frac{B}{N}
+$$</p>
+<p>这里分母固定用该实验总样本量 $N$（不是 $m=A+B$），用于表达“在总样本尺度上的概率差”。</p>
+<p>展示阈值：</p>
+<ul>
+<li>$\mathrm{diff}<0.01$：灰色</li>
+<li>$0.01\le \mathrm{diff}<0.02$：黄色</li>
+<li>$\mathrm{diff}\ge 0.02$：绿色</li>
+</ul>
+<p>说明：该着色是展示规则，不等同于显著性判定规则；显著性仍由二项检验与 Bonferroni 校正给出。</p>
+<hr />
+<h2>11. 口径声明</h2>
+<p>本文的样本量与区间/检验说明属于“实验设计与统计推断口径”，核心基于：</p>
+<ol>
+<li>比例估计正态近似（大样本条件）</li>
+<li>最保守方差上界 $p(1-p)\le 1/4$</li>
+<li>组内多重比较控制（Bonferroni）</li>
+</ol>
+</body>
+</html>
