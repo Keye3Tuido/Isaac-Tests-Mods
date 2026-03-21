@@ -166,26 +166,14 @@ Sub BatchSaveAsHTMLRecursive()
     indexPath = rootPath & "\\index.html"
     f = FreeFile
     Open indexPath For Output As #f
-    Print #f, "<html><head><meta charset='utf-8'><title>Excel 2 HTML</title></head><body>"
-    Print #f, "<h1>Excel 2 HTML</h1>"
+    Print #f, "<html><head><meta charset='utf-8'><title>Boss Direction Analysis</title></head><body>"
+    Print #f, "<h1>Boss Direction Analysis</h1>"
     If fso.FileExists(rootPath & "\\math\\math.html") Then
         Print #f, "<p><a href='math/math.html' target='_blank'>Math</a></p>"
         Print #f, "<hr/>"
     End If
-    Print #f, ParseMarkdownTables(rootPath & "\\statistics.md")
+    Print #f, ParseMarkdownTables(rootPath & "\\statistics.md", rootPath)
     Print #f, "<hr/>"
-
-    Dim key As Variant
-    For Each key In dict.Keys
-        Print #f, "<h2>" & key & "</h2><ul>"
-        Dim files As Variant
-        files = dict(key)
-        Dim i As Integer
-        For i = LBound(files) To UBound(files)
-            Print #f, "<li><a href='" & files(i) & "' target='_blank'>" & files(i) & "</a></li>"
-        Next
-        Print #f, "</ul>"
-    Next
 
     ' --- 先把 summary 下的 summary xlsx 转为 html（若 html 不存在则生成） ---
     Dim summaryFiles(3) As String
@@ -346,11 +334,13 @@ Sub FixEncoding(htmlPath As String)
     End With
 End Sub
 
-Function ParseMarkdownTables(mdPath As String) As String
+Function ParseMarkdownTables(mdPath As String, rootPath As String) As String
     Dim fso As Object, ts As Object
     Dim line As String
     Dim html As String
     Dim inTable As Boolean
+    Dim colGroup As Integer, colN As Integer, colRep As Integer, colRepPlus As Integer
+    Dim currentGroup As String
 
     Set fso = CreateObject("Scripting.FileSystemObject")
     If Not fso.FileExists(mdPath) Then
@@ -382,10 +372,48 @@ Function ParseMarkdownTables(mdPath As String) As String
                 If Not inTable Then
                     html = html & "<table border='1' cellspacing='0' cellpadding='5'>"
                     inTable = True
+                    colGroup = -1
+                    colN = -1
+                    colRep = -1
+                    colRepPlus = -1
+                    currentGroup = ""
                 End If
                 html = html & "<tr>"
                 For i = LBound(cells) To UBound(cells)
-                    html = html & "<td>" & Trim(cells(i)) & "</td>"
+                    Dim cellVal As String
+                    cellVal = Trim(cells(i))
+
+                    If LCase(Trim(cells(0))) = "#" Then
+                        If LCase(cellVal) = "#" Then colGroup = i
+                        If LCase(cellVal) = "n" Then colN = i
+                        If LCase(cellVal) = "rep(w)" Then colRep = i
+                        If LCase(cellVal) = "rep+(w)" Then colRepPlus = i
+                        html = html & "<td>" & cellVal & "</td>"
+                    Else
+                        If colGroup >= 0 And i = colGroup Then
+                            If cellVal <> "" Then
+                                currentGroup = cellVal
+                            End If
+                        End If
+
+                        If (i = colRep Or i = colRepPlus) And currentGroup <> "" And LCase(currentGroup) <> "total" Then
+                            Dim nVal As String
+                            nVal = ""
+                            If colN >= 0 And colN <= UBound(cells) Then
+                                nVal = Trim(cells(colN))
+                            End If
+
+                            Dim relHref As String
+                            relHref = BuildStatisticsHref(currentGroup, nVal, (i = colRepPlus), cellVal)
+                            If relHref <> "" Then
+                                html = html & "<td><a href='" & relHref & "' target='_blank'>" & cellVal & "</a></td>"
+                            Else
+                                html = html & "<td>" & cellVal & "</td>"
+                            End If
+                        Else
+                            html = html & "<td>" & cellVal & "</td>"
+                        End If
+                    End If
                 Next
                 html = html & "</tr>"
             End If
@@ -403,6 +431,38 @@ Function ParseMarkdownTables(mdPath As String) As String
 
     ts.Close
     ParseMarkdownTables = html
+End Function
+
+Function BuildStatisticsHref(groupName As String, nValue As String, isRepPlus As Boolean, scoreText As String) As String
+    Dim prefix As String
+    Dim safeGroup As String
+    Dim safeScore As String
+
+    safeGroup = Trim(groupName)
+    safeScore = Trim(scoreText)
+    If safeGroup = "" Or safeScore = "" Then
+        BuildStatisticsHref = ""
+        Exit Function
+    End If
+
+    If isRepPlus Then
+        prefix = "r+_"
+    Else
+        prefix = "rep_"
+    End If
+
+    Select Case UCase(safeGroup)
+        Case "BD", "BDXL", "BDKP", "BDXLKP"
+            BuildStatisticsHref = safeGroup & "/" & prefix & safeGroup & "_" & safeScore & "w.html"
+        Case "BDI", "BDIXL", "BDIKP", "BDIXLKP"
+            If Trim(nValue) = "" Then
+                BuildStatisticsHref = ""
+            Else
+                BuildStatisticsHref = safeGroup & "/" & Trim(nValue) & "/" & prefix & safeGroup & Trim(nValue) & "_" & safeScore & "w.html"
+            End If
+        Case Else
+            BuildStatisticsHref = ""
+    End Select
 End Function
 """
     run_vba_macro(vba_code, "BatchSaveAsHTMLRecursive")
