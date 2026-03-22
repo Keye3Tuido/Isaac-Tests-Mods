@@ -138,16 +138,20 @@ def patch_exported_html(base_dir):
     # 有文字表格时注入分隔线；纯图片页不注入分隔线
     css_with_border = (
         "<style id='bd-mobile-fix'>"
+        "body{overflow-x:auto!important;}"
         "table{border-collapse:collapse!important;}"
         "th,td{border:1px solid #666!important;white-space:normal!important;word-break:break-word!important;"
         "overflow-wrap:anywhere!important;height:auto!important;}"
-        "@media (max-width: 900px){th,td{font-size:14px!important;}}"
+        "@media (max-width: 900px){body{overflow-x:auto!important;-webkit-overflow-scrolling:touch!important;}"
+        "table{table-layout:auto!important;width:max-content!important;min-width:100%!important;}"
+        "col{width:auto!important;}"
+        "th,td{white-space:nowrap!important;word-break:normal!important;overflow-wrap:normal!important;font-size:12px!important;}}"
         "</style>"
     )
     css_without_border = (
         "<style id='bd-mobile-fix'>"
-        "img{max-width:100%!important;height:auto!important;}"
-        "@media (max-width: 900px){th,td{font-size:14px!important;}}"
+        "body{overflow-x:auto!important;}img{max-width:100%!important;height:auto!important;}"
+        "@media (max-width: 900px){body{overflow-x:auto!important;-webkit-overflow-scrolling:touch!important;}img{max-width:100%!important;height:auto!important;}}"
         "</style>"
     )
     excluded_sheet_names = {"门概率图", "方向图"}

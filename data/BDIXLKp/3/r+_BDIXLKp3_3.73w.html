@@ -82,7 +82,7 @@ function fnBuildTabStrip()
 {
  var szHTML=
   "<html><head><style>.clScroll {font:8pt Courier New;color:"+c_rgszClr[6]+";cursor:default;line-height:10pt;}"+
-  ".clScroll2 {font:10pt Arial;color:"+c_rgszClr[6]+";cursor:default;line-height:11pt;}</style><style id='bd-mobile-fix'>table{border-collapse:collapse!important;}th,td{border:1px solid #666!important;white-space:normal!important;word-break:break-word!important;overflow-wrap:anywhere!important;height:auto!important;}@media (max-width: 900px){th,td{font-size:14px!important;}}</style></head>"+
+  ".clScroll2 {font:10pt Arial;color:"+c_rgszClr[6]+";cursor:default;line-height:11pt;}</style><style id='bd-mobile-fix'>body{overflow-x:auto!important;}table{border-collapse:collapse!important;}th,td{border:1px solid #666!important;white-space:normal!important;word-break:break-word!important;overflow-wrap:anywhere!important;height:auto!important;}@media (max-width: 900px){body{overflow-x:auto!important;-webkit-overflow-scrolling:touch!important;}table{table-layout:auto!important;width:max-content!important;min-width:100%!important;}col{width:auto!important;}th,td{white-space:nowrap!important;word-break:normal!important;overflow-wrap:normal!important;font-size:12px!important;}}</style></head>"+
   "<body onclick=\"event.returnValue=false;\" ondragstart=\"event.returnValue=false;\" onselectstart=\"event.returnValue=false;\" bgcolor="+c_rgszClr[4]+" topmargin=0 leftmargin=0><table cellpadding=0 cellspacing=0 width=100%>"+
   "<tr><td colspan=6 height=1 bgcolor="+c_rgszClr[2]+"></td></tr>"+
   "<tr><td style=\"font:1pt\">&nbsp;<td>"+
