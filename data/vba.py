@@ -3,6 +3,7 @@ import os
 import sys
 import subprocess
 import shutil
+import re
 import win32com.client
 import path  # 你的 path.py，里面有 TARGET_PATH
 
@@ -129,6 +130,97 @@ def run_produce_outputs():
         raise RuntimeError(f"produce_outputs.py 执行失败，退出码: {result.returncode}")
     print("summary 汇总生成完成。")
 
+
+def patch_exported_html(base_dir):
+    # 只修复 Excel 导出文件的 charset 声明和移动端文字折行
+    # 不强制添加表格线/宽度，不修改 index.html（VBA 已正确生成）
+    marker = "id='bd-mobile-fix'"
+    # 有文字表格时注入分隔线；纯图片页不注入分隔线
+    css_with_border = (
+        "<style id='bd-mobile-fix'>"
+        "table{border-collapse:collapse!important;}"
+        "th,td{border:1px solid #666!important;white-space:normal!important;word-break:break-word!important;"
+        "overflow-wrap:anywhere!important;height:auto!important;}"
+        "@media (max-width: 900px){th,td{font-size:14px!important;}}"
+        "</style>"
+    )
+    css_without_border = (
+        "<style id='bd-mobile-fix'>"
+        "img{max-width:100%!important;height:auto!important;}"
+        "@media (max-width: 900px){th,td{font-size:14px!important;}}"
+        "</style>"
+    )
+    excluded_sheet_names = {"门概率图", "方向图"}
+
+    def has_textual_table_cells(html_text):
+        # 仅当 td/th 中存在可见文字时才认为是“文字表格”
+        for m in re.finditer(r"<(?:td|th)\b[^>]*>(.*?)</(?:td|th)>", html_text, flags=re.IGNORECASE | re.DOTALL):
+            inner = re.sub(r"<[^>]+>", "", m.group(1))
+            inner = re.sub(r"&(nbsp|#160);", "", inner, flags=re.IGNORECASE)
+            inner = re.sub(r"\s+", "", inner)
+            if inner:
+                return True
+        return False
+
+    def get_sheet_display_name_from_tabstrip(html_path):
+        base = os.path.basename(html_path).lower()
+        m = re.match(r"(sheet\d+\.html)$", base)
+        if not m:
+            return ""
+        tabstrip_path = os.path.join(os.path.dirname(html_path), "tabstrip.html")
+        if not os.path.exists(tabstrip_path):
+            return ""
+        try:
+            tab = open(tabstrip_path, "r", encoding="utf-8", errors="ignore").read()
+        except Exception:
+            return ""
+        pat = r"href=\"" + re.escape(m.group(1)) + r"\"[^>]*><font[^>]*>(.*?)</font>"
+        mm = re.search(pat, tab, flags=re.IGNORECASE | re.DOTALL)
+        if not mm:
+            return ""
+        name = re.sub(r"<[^>]+>", "", mm.group(1)).strip()
+        return name
+
+    def patch_one(html_path):
+        # 跳过 index.html，由 VBA 负责生成
+        if os.path.basename(html_path).lower() == 'index.html':
+            return
+        try:
+            text = open(html_path, "r", encoding="utf-8", errors="ignore").read()
+        except Exception:
+            return
+
+        original = text
+        text = text.replace("charset=windows-1252", "charset=utf-8")
+        text = text.replace("charset=gb2312", "charset=utf-8")
+
+        if "viewport" not in text.lower():
+            text = re.sub(r"<head>", "<head><meta name='viewport' content='width=device-width, initial-scale=1'>", text, count=1, flags=re.IGNORECASE)
+
+        sheet_name = get_sheet_display_name_from_tabstrip(html_path)
+        if sheet_name in excluded_sheet_names:
+            css = css_without_border
+        else:
+            css = css_with_border if has_textual_table_cells(text) else css_without_border
+        # 每次运行都刷新 bd-mobile-fix，避免旧样式残留
+        text = re.sub(
+            r"<style\s+id=['\"]bd-mobile-fix['\"]>.*?</style>",
+            css,
+            text,
+            count=1,
+            flags=re.IGNORECASE | re.DOTALL,
+        )
+        if marker not in text.lower() and "</head>" in text.lower():
+            text = re.sub(r"</head>", css + "</head>", text, count=1, flags=re.IGNORECASE)
+
+        if text != original:
+            open(html_path, "w", encoding="utf-8", newline="").write(text)
+
+    for root, _dirs, files in os.walk(base_dir):
+        for name in files:
+            if name.lower().endswith(".html"):
+                patch_one(os.path.join(root, name))
+
 if __name__ == "__main__":
     if FORCE_UPDATE:
         cleanup_for_force_update(path.TARGET_PATH)
@@ -166,7 +258,7 @@ Sub BatchSaveAsHTMLRecursive()
     indexPath = rootPath & "\\index.html"
     f = FreeFile
     Open indexPath For Output As #f
-    Print #f, "<html><head><meta charset='utf-8'><title>Boss Direction Analysis</title></head><body>"
+    Print #f, "<html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'><title>Boss Direction Analysis</title><style>a,a:visited{{color:#06c;text-decoration:underline;}}table{{border-collapse:collapse;}}th,td{{border:1px solid #666;white-space:normal;word-break:break-word;overflow-wrap:anywhere;vertical-align:top;padding:4px;}}@media (max-width:900px){{th,td{{font-size:14px;}}}}</style></head><body>"
     Print #f, "<h1>Boss Direction Analysis</h1>"
     If fso.FileExists(rootPath & "\\math\\math.html") Then
         Print #f, "<p><a href='math/math.html' target='_blank'>Math</a></p>"
@@ -205,9 +297,12 @@ Sub BatchSaveAsHTMLRecursive()
                     wbSum.SaveAs sHtmlFull, FileFormat:=44
                     wbSum.Saved = True
                     wbSum.Close SaveChanges:=False
-                    Call FixEncoding(sHtmlFull)
+                    Call FixWorkbookHtmlAssets(sHtmlFull)
                 End If
                 On Error GoTo 0
+            End If
+            If fso.FileExists(sHtmlFull) Then
+                Call FixWorkbookHtmlAssets(sHtmlFull)
             End If
         End If
     Next
@@ -277,7 +372,9 @@ Sub ProcessFolder(f As Object, rootPath As String, dict As Object, forceUpdate A
                     wb.SaveAs htmlPath, FileFormat:=44
                     wb.Saved = True
                     wb.Close SaveChanges:=False
-                    Call FixEncoding(htmlPath)
+                End If
+                If Dir(htmlPath) <> "" Then
+                    Call FixWorkbookHtmlAssets(htmlPath)
                 End If
                 relPath = Replace(file.Path, rootPath & "\\", "")
                 relPath = Replace(relPath, ".xlsx", ".html")
@@ -309,29 +406,34 @@ Sub AutoFitWorkbookColumns(wb As Workbook)
     Next
 End Sub
 
-Sub FixEncoding(htmlPath As String)
-    Dim fileContent As String
+Sub FixWorkbookHtmlAssets(mainHtmlPath As String)
     Dim fso As Object
-    Dim ts As Object
-    Dim stream As Object
+    Dim filesFolderPath As String
+    Dim folderObj As Object
+    Dim fileObj As Object
 
     Set fso = CreateObject("Scripting.FileSystemObject")
-    Set ts = fso.OpenTextFile(htmlPath, 1, False)
-    fileContent = ts.ReadAll
-    ts.Close
 
-    fileContent = Replace(fileContent, "charset=windows-1252", "charset=utf-8")
-    fileContent = Replace(fileContent, "charset=gb2312", "charset=utf-8")
+    If fso.FileExists(mainHtmlPath) Then
+        Call FixEncoding(mainHtmlPath)
+    End If
 
-    Set stream = CreateObject("ADODB.Stream")
-    With stream
-        .Type = 2
-        .Charset = "utf-8"
-        .Open
-        .WriteText fileContent
-        .SaveToFile htmlPath, 2
-        .Close
-    End With
+    filesFolderPath = Replace(mainHtmlPath, ".html", ".files")
+    If Not fso.FolderExists(filesFolderPath) Then
+        Exit Sub
+    End If
+
+    Set folderObj = fso.GetFolder(filesFolderPath)
+    For Each fileObj In folderObj.Files
+        If LCase(Right(fileObj.Name, 5)) = ".html" Then
+            Call FixEncoding(fileObj.Path)
+        End If
+    Next
+End Sub
+
+Sub FixEncoding(htmlPath As String)
+    ' 已由 Python patch_exported_html 统一处理，此处不再修改文件
+    ' 避免 VBA 以 GBK 读取 UTF-8 内容导致中文乱码
 End Sub
 
 Function ParseMarkdownTables(mdPath As String, rootPath As String) As String
@@ -466,3 +568,4 @@ Function BuildStatisticsHref(groupName As String, nValue As String, isRepPlus As
 End Function
 """
     run_vba_macro(vba_code, "BatchSaveAsHTMLRecursive")
+    patch_exported_html(path.TARGET_PATH)

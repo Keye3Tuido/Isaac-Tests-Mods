@@ -1,9 +1,9 @@
-﻿<html xmlns:v="urn:schemas-microsoft-com:vml"
+<html xmlns:v="urn:schemas-microsoft-com:vml"
 xmlns:o="urn:schemas-microsoft-com:office:office"
 xmlns:x="urn:schemas-microsoft-com:office:excel"
 xmlns="http://www.w3.org/TR/REC-html40">
 
-<head>
+<head><meta name='viewport' content='width=device-width, initial-scale=1'>
 <meta name="Excel Workbook Frameset">
 <meta http-equiv=Content-Type content="text/html; charset=utf-8">
 <meta name=ProgId content=Excel.Sheet>
@@ -26,14 +26,14 @@ xmlns="http://www.w3.org/TR/REC-html40">
  var c_lTabs=8;
 
  var c_rgszSh=new Array(c_lTabs);
- c_rgszSh[0] = "瀹為獙鏁版嵁";
- c_rgszSh[1] = "姒傜巼缁熻";
- c_rgszSh[2] = "鍧囧€煎亸宸?%)鏂瑰樊";
- c_rgszSh[3] = "闂ㄦ鐜囧浘";
- c_rgszSh[4] = "鏂瑰悜鍥?;
- c_rgszSh[5] = "缃俊鍖洪棿楠岃瘉";
- c_rgszSh[6] = "缁撹-闂?;
- c_rgszSh[7] = "缁撹-鏂瑰悜";
+ c_rgszSh[0] = "实验数据";
+ c_rgszSh[1] = "概率统计";
+ c_rgszSh[2] = "均值偏差(%)方差";
+ c_rgszSh[3] = "门概率图";
+ c_rgszSh[4] = "方向图";
+ c_rgszSh[5] = "置信区间验证";
+ c_rgszSh[6] = "结论-门";
+ c_rgszSh[7] = "结论-方向";
 
 
 
@@ -82,7 +82,7 @@ function fnBuildTabStrip()
 {
  var szHTML=
   "<html><head><style>.clScroll {font:8pt Courier New;color:"+c_rgszClr[6]+";cursor:default;line-height:10pt;}"+
-  ".clScroll2 {font:10pt Arial;color:"+c_rgszClr[6]+";cursor:default;line-height:11pt;}</style></head>"+
+  ".clScroll2 {font:10pt Arial;color:"+c_rgszClr[6]+";cursor:default;line-height:11pt;}</style><style id='bd-mobile-fix'>table{border-collapse:collapse!important;}th,td{border:1px solid #666!important;white-space:normal!important;word-break:break-word!important;overflow-wrap:anywhere!important;height:auto!important;}@media (max-width: 900px){th,td{font-size:14px!important;}}</style></head>"+
   "<body onclick=\"event.returnValue=false;\" ondragstart=\"event.returnValue=false;\" onselectstart=\"event.returnValue=false;\" bgcolor="+c_rgszClr[4]+" topmargin=0 leftmargin=0><table cellpadding=0 cellspacing=0 width=100%>"+
   "<tr><td colspan=6 height=1 bgcolor="+c_rgszClr[2]+"></td></tr>"+
   "<tr><td style=\"font:1pt\">&nbsp;<td>"+
@@ -101,7 +101,7 @@ function fnBuildTabStrip()
  szHTML =
   "<html><head>"+
   "<style>A:link,A:visited,A:active {text-decoration:none;"+"color:"+c_rgszClr[3]+";}"+
-  ".clTab {cursor:hand;background:"+c_rgszClr[1]+";font:9pt 瀹嬩綋;padding-left:3px;padding-right:3px;text-align:center;}"+
+  ".clTab {cursor:hand;background:"+c_rgszClr[1]+";font:9pt 宋体;padding-left:3px;padding-right:3px;text-align:center;}"+
   ".clBorder {background:"+c_rgszClr[2]+";font:1pt;}"+
   "</style></head><body onload=\"parent.fnInit();\" onselectstart=\"event.returnValue=false;\" ondragstart=\"event.returnValue=false;\" bgcolor="+c_rgszClr[4]+
   " topmargin=0 leftmargin=0><table id=tbTabs cellpadding=0 cellspacing=0>";
@@ -311,35 +311,35 @@ function fnSetActiveSheet(iSh)
  <x:ExcelWorkbook>
   <x:ExcelWorksheets>
    <x:ExcelWorksheet>
-    <x:Name>瀹為獙鏁版嵁</x:Name>
+    <x:Name>实验数据</x:Name>
     <x:WorksheetSource HRef="rep_BDIXLKp3_3.63w.files/sheet001.html"/>
    </x:ExcelWorksheet>
    <x:ExcelWorksheet>
-    <x:Name>姒傜巼缁熻</x:Name>
+    <x:Name>概率统计</x:Name>
     <x:WorksheetSource HRef="rep_BDIXLKp3_3.63w.files/sheet002.html"/>
    </x:ExcelWorksheet>
    <x:ExcelWorksheet>
-    <x:Name>鍧囧€煎亸宸?%)鏂瑰樊</x:Name>
+    <x:Name>均值偏差(%)方差</x:Name>
     <x:WorksheetSource HRef="rep_BDIXLKp3_3.63w.files/sheet003.html"/>
    </x:ExcelWorksheet>
    <x:ExcelWorksheet>
-    <x:Name>闂ㄦ鐜囧浘</x:Name>
+    <x:Name>门概率图</x:Name>
     <x:WorksheetSource HRef="rep_BDIXLKp3_3.63w.files/sheet004.html"/>
    </x:ExcelWorksheet>
    <x:ExcelWorksheet>
-    <x:Name>鏂瑰悜鍥?/x:Name>
+    <x:Name>方向图</x:Name>
     <x:WorksheetSource HRef="rep_BDIXLKp3_3.63w.files/sheet005.html"/>
    </x:ExcelWorksheet>
    <x:ExcelWorksheet>
-    <x:Name>缃俊鍖洪棿楠岃瘉</x:Name>
+    <x:Name>置信区间验证</x:Name>
     <x:WorksheetSource HRef="rep_BDIXLKp3_3.63w.files/sheet006.html"/>
    </x:ExcelWorksheet>
    <x:ExcelWorksheet>
-    <x:Name>缁撹-闂?/x:Name>
+    <x:Name>结论-门</x:Name>
     <x:WorksheetSource HRef="rep_BDIXLKp3_3.63w.files/sheet007.html"/>
    </x:ExcelWorksheet>
    <x:ExcelWorksheet>
-    <x:Name>缁撹-鏂瑰悜</x:Name>
+    <x:Name>结论-方向</x:Name>
     <x:WorksheetSource HRef="rep_BDIXLKp3_3.63w.files/sheet008.html"/>
    </x:ExcelWorksheet>
   </x:ExcelWorksheets>
@@ -359,7 +359,7 @@ function fnSetActiveSheet(iSh)
  <frame src="rep_BDIXLKp3_3.63w.files/tabstrip.html" name="frTabs" marginwidth=0 marginheight=0>
  <noframes>
   <body>
-   <p>姝ら〉闈娇鐢ㄤ簡妗嗘灦锛岃€屾偍鐨勬祻瑙堝櫒涓嶆敮鎸佹鏋躲€?/p>
+   <p>此页面使用了框架，而您的浏览器不支持框架。</p>
   </body>
  </noframes>
 </frameset>
